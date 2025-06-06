@@ -1,0 +1,1937 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lector EPUB con Modo Sepia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --font-controls-bg: #f7fafc; 
+            --fullscreen-bg: #f0f0f0; 
+            --toc-bg: #f9fafb; 
+            --library-item-bg: #ffffff;
+            --library-item-border: #e5e7eb;
+            --footnote-popup-bg: #ffffff;
+            --footnote-popup-text: #333333;
+            --footnote-popup-border: #e5e7eb;
+            --progress-bar-bg: #e5e7eb;
+            --progress-bar-fill: #2563eb;
+            --bookmark-item-hover-bg: #e5e7eb;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+            color: #333;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+            overflow-x: hidden; 
+        }
+
+        body.dark-mode {
+            background-color: #1a202c;
+            color: #e2e8f0;
+            --font-controls-bg: #374151; 
+            --fullscreen-bg: #1a202c; 
+            --toc-bg: #2d3748; 
+            --library-item-bg: #2d3748;
+            --library-item-border: #4a5568;
+            --footnote-popup-bg: #2d3748;
+            --footnote-popup-text: #e2e8f0;
+            --footnote-popup-border: #4a5568;
+            --progress-bar-bg: #4a5568;
+            --progress-bar-fill: #60a5fa;
+            --bookmark-item-hover-bg: #374151;
+        }
+        body.sepia-mode {
+            background-color: #f4ecd8; 
+            color: #5b4636; 
+            --font-controls-bg: #e9dfc7; 
+            --fullscreen-bg: #f4ecd8; 
+            --toc-bg: #f0e6d0; 
+            --library-item-bg: #f0e6d0;
+            --library-item-border: #dcd0b3;
+            --footnote-popup-bg: #f0e6d0;
+            --footnote-popup-text: #5b4636;
+            --footnote-popup-border: #dcd0b3;
+            --progress-bar-bg: #dcd0b3;
+            --progress-bar-fill: #705a4b;
+            --bookmark-item-hover-bg: #e9dfc7;
+        }
+
+        body.epub-fullscreen {
+            background-color: var(--fullscreen-bg);
+        }
+
+        /* Tailwind Overrides for Dark Mode */
+        .dark-mode .bg-white { background-color: #2d3748 !important; }
+        .dark-mode .bg-gray-50 { background-color: #374151 !important; }
+        .dark-mode .bg-gray-100 { background-color: #1f2937 !important; }
+        .dark-mode .text-gray-800 { color: #e2e8f0 !important; }
+        .dark-mode .text-gray-700 { color: #cbd5e0 !important; }
+        .dark-mode .text-gray-600 { color: #9ca3af !important; }
+        .dark-mode .text-gray-500 { color: #a0aec0 !important; }
+        .dark-mode .border-gray-200 { border-color: #4a5568 !important; }
+        .dark-mode .shadow-md { box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3) !important; }
+        .dark-mode .text-blue-600 { color: #60a5fa !important; }
+        .dark-mode .file\:bg-blue-100 { background-color: #374151 !important; }
+        .dark-mode .file\:text-blue-700 { color: #93c5fd !important; }
+        .dark-mode .hover\:file\:bg-blue-200:hover { background-color: #4b5563 !important; }
+        .dark-mode .prose-invert { color: #e2e8f0; }
+        .dark-mode .prose-invert h1, .dark-mode .prose-invert h2, .dark-mode .prose-invert h3, .dark-mode .prose-invert strong { color: #e2e8f0; }
+        .dark-mode .prose-invert a { color: #90cdf4; }
+
+        /* Tailwind Overrides for Sepia Mode */
+        .sepia-mode .bg-white { background-color: #e9dfc7 !important; } 
+        .sepia-mode .bg-gray-50 { background-color: #f0e6d0 !important; } 
+        .sepia-mode .bg-gray-100 { background-color: #e0d5b6 !important; } 
+        .sepia-mode .text-gray-800 { color: #5b4636 !important; }
+        .sepia-mode .text-gray-700 { color: #705a4b !important; }
+        .sepia-mode .text-gray-600 { color: #8a7565 !important; }
+        .sepia-mode .text-gray-500 { color: #a08c7c !important; }
+        .sepia-mode .border-gray-200 { border-color: #dcd0b3 !important; }
+        .sepia-mode .shadow-md { box-shadow: 0 4px 10px rgba(91, 70, 54, 0.2) !important; }
+        .sepia-mode .text-blue-600 { color: #705a4b !important; } 
+        .sepia-mode .file\:bg-blue-100 { background-color: #e0d5b6 !important; }
+        .sepia-mode .file\:text-blue-700 { color: #5b4636 !important; }
+        .sepia-mode .hover\:file\:bg-blue-200:hover { background-color: #dcd0b3 !important; }
+        .sepia-mode .btn-primary { background-color: #705a4b; color: #f4ecd8; }
+        .sepia-mode .btn-primary:hover { background-color: #5b4636; }
+        .sepia-mode .btn-secondary { background-color: #a08c7c; color: #f4ecd8; }
+        .sepia-mode .btn-secondary:hover { background-color: #8a7565; }
+        .sepia-mode .btn-link { color: #705a4b; }
+        .sepia-mode .btn-link:hover { color: #5b4636; }
+
+
+        #viewer {
+            width: 100%;
+            height: 100%; 
+            border: 1px solid var(--footnote-popup-border);
+            background-color: var(--footnote-popup-bg);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        .sepia-mode #viewer {
+            background-color: #f4ecd8; 
+            border-color: #dcd0b3;
+        }
+
+
+        .modal {
+            display: none; position: fixed; z-index: 1050; 
+            left: 0; top: 0; width: 100%; height: 100%; overflow: auto;
+            background-color: rgba(0,0,0,0.7);
+            align-items: center; justify-content: center;
+            padding: 1rem; 
+        }
+        .modal-content {
+            background-color: #ffffff; margin: auto; padding: 1.5rem; 
+            border: 1px solid #d1d5db; width: 90%; max-width: 500px; 
+            border-radius: 0.75rem; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+            max-height: 90vh; 
+            display: flex;
+            flex-direction: column;
+        }
+        .dark-mode .modal-content { background-color: #2d3748; border-color: #4a5568; }
+        .sepia-mode .modal-content { background-color: #e9dfc7; border-color: #dcd0b3; }
+        .modal-body { 
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        /* Estilos para el modal de notas al pie */
+        .footnote-modal-content {
+            max-width: 600px; 
+            background-color: var(--footnote-popup-bg);
+            color: var(--footnote-popup-text);
+            border-color: var(--footnote-popup-border);
+        }
+        #footnoteModalBody a { 
+            color: var(--text-blue-600) !important; 
+        }
+        body.dark-mode #footnoteModalBody a {
+            color: #90cdf4 !important;
+        }
+        body.sepia-mode #footnoteModalBody a {
+            color: #705a4b !important; 
+        }
+        #footnoteModalBody a[href^="#epub-footnote-"],
+        #footnoteModalBody a[href^="#fnref"],
+        #footnoteModalBody a[href^="#noteref_"],
+        #footnoteModalBody a[rev="footnote"], 
+        #footnoteModalBody a[rel="footnote"] { 
+             display: none !important;
+        }
+
+
+        .btn {
+            padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600;
+            transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out, color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+            text-align: center; cursor: pointer; border: 1px solid transparent;
+        }
+        .btn-primary { background-color: #2563eb; color: white; }
+        .btn-primary:hover { background-color: #1d4ed8; box-shadow: 0 2px 10px rgba(37, 99, 235, 0.5); }
+        .dark-mode .btn-primary { background-color: #3b82f6; }
+        .dark-mode .btn-primary:hover { background-color: #2563eb; }
+        .btn-secondary { background-color: #6b7280; color: white; }
+        .btn-secondary:hover { background-color: #4b5563; }
+        .dark-mode .btn-secondary { background-color: #4b5563; }
+        .dark-mode .btn-secondary:hover { background-color: #374151; }
+        .btn-sm { padding: 0.5rem 1rem; font-size: 0.875rem; }
+        .btn-link {
+            background-color: transparent; color: #2563eb; font-weight: 500; padding: 0.5rem;
+        }
+        .btn-link:hover { text-decoration: underline; color: #1d4ed8; }
+        .dark-mode .btn-link { color: #60a5fa; }
+        .dark-mode .btn-link:hover { color: #3b82f6; }
+
+        /* Custom styles for the fullscreen toggle button */
+        #toggleFullscreenButton {
+            background-color: #76FF03 !important; 
+            color: black !important; 
+        }
+        #toggleFullscreenButton:hover {
+            background-color: #64DD17 !important; 
+        }
+        
+        /* Collection Filter Button Styles */
+        #collectionFilters .btn {
+            color: white !important;
+        }
+        #collectionFilters .btn.active {
+            color: white !important;
+        }
+        #collectionFilters .btn[data-collection="all"].active {
+            background-color: #455A64 !important;
+        }
+        #collectionFilters .btn[data-collection="Ciencias"].active {
+            background-color: #E53935 !important;
+        }
+        #collectionFilters .btn[data-collection="Sociedad en movimiento"].active {
+            background-color: #FDD835 !important;
+            color: black !important; /* Yellow needs black text for contrast */
+        }
+        #collectionFilters .btn[data-collection="Aulas"].active {
+            background-color: #1976D2 !important;
+        }
+
+
+        .form-input {
+            width: 100%; padding: 0.75rem 1rem; border: 1px solid #d1d5db;
+            border-radius: 0.375rem; transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s, color 0.2s;
+            background-color: #ffffff; color: #333;
+        }
+        .form-input:focus {
+            outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+        }
+        .dark-mode .form-input {
+            background-color: #4a5568; border-color: #6b7280; color: #e2e8f0;
+        }
+        .dark-mode .form-input:focus {
+            border-color: #60a5fa; box-shadow: 0 0 0 3px rgba(99, 153, 255, 0.3);
+        }
+        .sepia-mode .form-input {
+            background-color: #e0d5b6; border-color: #c8bca7; color: #5b4636;
+        }
+        .sepia-mode .form-input:focus {
+            border-color: #705a4b; box-shadow: 0 0 0 3px rgba(112, 90, 75, 0.2);
+        }
+
+
+        .message-base {
+            display: none; margin-top: 0.75rem; padding: 0.75rem;
+            border: 1px solid; border-radius: 0.375rem; font-size: 0.875rem;
+        }
+        .error-message { background-color: #fef2f2; color: #991b1b; border-color: #fecaca; }
+        .dark-mode .error-message { background-color: #451a1a; color: #fca5a5; border-color: #f87171; }
+        .sepia-mode .error-message { background-color: #fff0e1; color: #8c5a2b; border-color: #ffd9b3; }
+        .success-message { background-color: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+        .dark-mode .success-message { background-color: #14532d; color: #86efac; border-color: #4ade80; }
+        .sepia-mode .success-message { background-color: #f0fff0; color: #4a704b; border-color: #cce6cc; }
+
+
+        #modeToggle {
+            background-color: #cbd5e0; color: #2d3748;
+            padding: 0.5rem 1rem; border-radius: 9999px; font-size: 0.875rem;
+            font-weight: 500; cursor: pointer; border: none;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        #modeToggle:hover { background-color: #a0aec0; }
+        .dark-mode #modeToggle { background-color: #4a5568; color: #e2e8f0; }
+        .dark-mode #modeToggle:hover { background-color: #6b7280; }
+        .sepia-mode #modeToggle { background-color: #dcd0b3; color: #5b4636; }
+        .sepia-mode #modeToggle:hover { background-color: #c8bca7; }
+
+        #fontControlsContainer {
+            display: none; 
+            justify-content: center; 
+            align-items: center;
+            gap: 0.5rem; 
+            margin-bottom: 0.5rem; 
+            flex-wrap: wrap; 
+            padding: 0.5rem 0;
+        }
+
+        #fontControlsGroup, #fontFamilyControls, #advancedFontControlsGroup { 
+            background-color: var(--font-controls-bg);
+            padding: 0.5rem; border-radius: 0.5rem;
+            display: flex; align-items: center; gap: 0.5rem; 
+            flex-wrap: wrap; 
+        }
+        .sepia-mode #fontControlsGroup, .sepia-mode #fontFamilyControls, .sepia-mode #advancedFontControlsGroup {
+            background-color: #e0d5b6; 
+        }
+
+
+        #viewerContainer {
+            position: relative;
+            flex-grow: 1; 
+        }
+        #navigation {
+            position: absolute; z-index: 10; top: 0; bottom: 0; left: 0; right: 0;
+            display: flex; justify-content: space-between; align-items: center;
+            width: 100%; background-color: transparent; padding: 0 0.5rem;
+            opacity: 0.2; transition: opacity 0.3s ease; pointer-events: none;
+        }
+        #viewerContainer:hover #navigation { opacity: 1; }
+        #navigation button {
+            background-color: rgba(107, 114, 128, 0.6); color: white;
+            padding: 0.5rem 0.75rem; border-radius: 0.375rem;
+            border: none; cursor: pointer; font-size: 1.25rem;
+            transition: background-color 0.2s ease; pointer-events: auto;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .dark-mode #navigation button { background-color: rgba(75, 85, 99, 0.7); color: #e2e8f0; }
+        .sepia-mode #navigation button { background-color: rgba(112, 90, 75, 0.6); color: #f4ecd8; }
+        #navigation button:hover { background-color: rgba(75, 85, 99, 0.8); }
+        .dark-mode #navigation button:hover { background-color: rgba(55, 65, 81, 0.9); }
+        .sepia-mode #navigation button:hover { background-color: rgba(91, 70, 54, 0.8); }
+        #navigation span { display: none; }
+
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1); width: 36px; height: 36px;
+            border-radius: 50%; border-left-color: #2563eb;
+            animation: spin 1s ease infinite; display: none; margin: 20px auto;
+        }
+        .dark-mode .spinner { border-left-color: #60a5fa; }
+        .sepia-mode .spinner { border-left-color: #705a4b; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #appLoadingSpinner {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000;
+        }
+
+        #tocNavigator {
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+            max-height: calc(100vh - 120px); 
+            background-color: var(--toc-bg); 
+        }
+        .dark-mode #tocNavigator h3, .dark-mode #bookmarksContainer h4 { color: #cbd5e0; }
+        .dark-mode #tocContainer li a, .dark-mode #bookmarksList li { color: #cbd5e0; }
+        .dark-mode #tocContainer li a:hover, .dark-mode #bookmarksList li:hover { background-color: #374151; }
+        .dark-mode #tocContainer li .active-toc-item { background-color: #3b82f6; color: white !important; }
+        .sepia-mode #tocNavigator h3, .sepia-mode #bookmarksContainer h4 { color: #5b4636; }
+        .sepia-mode #tocContainer li a, .sepia-mode #bookmarksList li { color: #705a4b; }
+        .sepia-mode #tocContainer li a:hover, .sepia-mode #bookmarksList li:hover { background-color: #e9dfc7; }
+        .sepia-mode #tocContainer li .active-toc-item { background-color: #705a4b; color: #f4ecd8 !important; }
+
+
+        #bookmarksContainer { margin-top: 1rem; }
+        #bookmarksContainer h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem; }
+        #bookmarksList { list-style: none; padding-left: 0; max-height: 150px; overflow-y: auto; border: 1px solid var(--library-item-border); border-radius: 0.25rem; padding: 0.25rem;}
+        #bookmarksList li { 
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.35rem 0.5rem; border-radius: 0.25rem;
+            font-size: 0.8rem; cursor: pointer;
+            transition: background-color 0.2s ease;
+            border-bottom: 1px solid var(--library-item-border);
+        }
+        #bookmarksList li:last-child { border-bottom: none; }
+        #bookmarksList li:hover { background-color: var(--bookmark-item-hover-bg); }
+        #bookmarksList li .bookmark-text { flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 0.5rem; }
+        #bookmarksList li .delete-bookmark-btn {
+            background: none; border: none; color: #ef4444; padding: 0.2rem; cursor: pointer;
+            font-size: 0.9rem; line-height: 1; opacity: 0.7;
+        }
+        #bookmarksList li .delete-bookmark-btn:hover { opacity: 1; }
+        .dark-mode #bookmarksList li .delete-bookmark-btn { color: #f87171; }
+        .sepia-mode #bookmarksList li .delete-bookmark-btn { color: #b91c1c; }
+
+
+        #tocContainer ul { list-style: none; padding-left: 0; }
+        #tocContainer li a {
+            display: block; padding: 0.35rem 0.75rem; text-decoration: none;
+            color: #374151; border-radius: 0.25rem;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        #tocContainer li a:hover { background-color: #e5e7eb; }
+        #tocContainer li .active-toc-item {
+            background-color: #2563eb; color: white !important; font-weight: 600;
+        }
+        #tocContainer .toc-depth-1 { padding-left: 0.5rem; }
+        #tocContainer .toc-depth-2 { padding-left: 1.5rem; }
+        #tocContainer .toc-depth-3 { padding-left: 2.5rem; }
+
+        @media (max-width: 767px) {
+            #tocNavigator:not(.toc-fullscreen-open) { 
+                position: fixed; top: 0; left: 0; bottom: 0;
+                width: 80%; max-width: 300px; z-index: 1040; 
+                transform: translateX(-100%);
+                box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+                max-height: 100vh; 
+            }
+            #tocNavigator.open:not(.toc-fullscreen-open) { transform: translateX(0); }
+
+            #tocOverlay {
+                display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                background-color: rgba(0,0,0,0.5); z-index: 1030;
+            }
+            #tocOverlay.open { display: block; }
+            #fontControlsContainer:not(body.epub-fullscreen #fontControlsContainer) { 
+                 display: none !important;
+            }
+            body:not(.epub-fullscreen) #fontControlsGroup, 
+            body:not(.epub-fullscreen) #fontFamilyControls,
+            body:not(.epub-fullscreen) #advancedFontControlsGroup { 
+                 display: none !important; 
+            }
+        }
+
+        @media (max-width: 768px) { 
+            body.epub-fullscreen #fontControlsContainer { 
+                gap: 0.5rem !important; 
+                padding: 0.2rem 0.3rem !important;
+            }
+            body.epub-fullscreen #fontControlsGroup, 
+            body.epub-fullscreen #fontFamilyControls,
+            body.epub-fullscreen #advancedFontControlsGroup { 
+                padding: 0.3rem !important; 
+                gap: 0.3rem !important; 
+                flex-direction: row !important; 
+            }
+             body.epub-fullscreen #fontControlsContainer .btn-sm {
+                padding: 0.2rem 0.4rem !important; 
+                font-size: 0.7rem !important; 
+            }
+            body.epub-fullscreen #fontControlsContainer .text-sm {
+                font-size: 0.7rem !important; 
+                margin-right: 0.2rem !important;
+            }
+
+            #navigation { padding: 0 0.25rem; }
+            #navigation button { padding: 0.3rem 0.5rem; font-size: 1rem; }
+            .modal-content { padding: 1.5rem; }
+            header h1 { font-size: 1.75rem; }
+        }
+
+        /* Fullscreen Mode Styles */
+        body.epub-fullscreen #readerAppContainer { 
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 2000; padding: 0 !important; margin: 0 !important;
+            background-color: var(--fullscreen-bg); overflow: hidden;
+            display: flex; flex-direction: column; 
+        }
+        body.epub-fullscreen #appHeader, 
+        body.epub-fullscreen #appFooter, 
+        body.epub-fullscreen #locationDisplayContainer,
+        body.epub-fullscreen #toggleTocButton { 
+            display: none !important;
+        }
+        body.epub-fullscreen #mainContent {
+            flex-grow: 1; 
+            height: 100% !important; width: 100% !important;
+            padding: 0 !important; margin: 0 !important;
+            border-radius: 0 !important; box-shadow: none !important;
+            display: flex !important; flex-direction: row !important; 
+        }
+        body.epub-fullscreen #tocNavigator { 
+            position: fixed; 
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 250px; 
+            transform: translateX(-100%);
+            z-index: 2010; 
+            box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+            overflow-y: auto;
+            background-color: var(--toc-bg);
+            padding-top: 1rem; 
+            transition: transform 0.3s ease-in-out; 
+        }
+        body.epub-fullscreen #tocNavigator.toc-fullscreen-open {
+            transform: translateX(0);
+        }
+        body.epub-fullscreen #readerContentArea {
+            flex-grow: 1 !important; 
+            padding: 0 !important; 
+            display: flex; 
+            flex-direction: column;
+            overflow: hidden; 
+            height: 100%; 
+        }
+        body.epub-fullscreen #viewerContainer {
+            flex-grow: 1 !important; 
+            border: none !important;
+            border-radius: 0 !important; 
+            overflow: hidden;
+        }
+        body.epub-fullscreen #fontControlsContainer {
+            display: flex !important; 
+            flex-direction: row; 
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0; 
+            padding: 0.3rem 0.5rem !important; 
+            margin: 0 !important; 
+            width: 100%; 
+            background-color: var(--font-controls-bg); 
+            box-shadow: 0 -1px 4px rgba(0,0,0,0.15); 
+            max-height: none !important; 
+            opacity: 1 !important; 
+            height: auto; 
+            border-top: 1px solid rgba(128,128,128,0.2); 
+        }
+        body.epub-fullscreen #fontControlsContainer > div, 
+        body.epub-fullscreen #fontControlsContainer > button { 
+            padding: 0.2rem 0.35rem; 
+            gap: 0.25rem; 
+        }
+        body.epub-fullscreen #fontControlsContainer .btn-sm {
+            padding: 0.2rem 0.4rem; 
+            font-size: 0.7rem; 
+        }
+        body.epub-fullscreen #fontControlsContainer .text-sm {
+            font-size: 0.7rem; 
+            margin-right: 0.2rem;
+        }
+        #exitFullscreenBottomButton {
+            display: none; 
+        }
+        body.epub-fullscreen #exitFullscreenBottomButton {
+            display: inline-flex; 
+            align-items: center;
+            gap: 0.25rem; 
+            margin-left: 0.5rem; 
+        }
+        #toggleTocFullscreenButton {
+            display: none; 
+        }
+        body.epub-fullscreen #toggleTocFullscreenButton {
+            display: inline-flex; 
+            align-items: center;
+            gap: 0.25rem;
+            margin-right: 0.5rem; 
+        }
+        body.epub-fullscreen #viewer { border-radius: 0 !important; }
+
+
+        .library-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        .library-item {
+            background-color: var(--library-item-bg);
+            border: 1px solid var(--library-item-border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+        .library-item:hover { 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        .library-item img.library-item-cover {
+            width: 100%;
+            height: auto;
+            max-height: 220px; 
+            object-fit: contain; 
+            border-radius: 0.25rem;
+            margin-bottom: 0.75rem;
+            background-color: #e0e0e0; 
+            border: 1px solid var(--library-item-border);
+        }
+        .dark-mode .library-item img.library-item-cover { background-color: #4a5568; border-color: #6b7280;}
+        .sepia-mode .library-item img.library-item-cover { background-color: #dcd0b3; border-color: #c8bca7;}
+
+        .library-item h3 {
+            font-size: 1.05rem; font-weight: 600; margin-bottom: 0.25rem;
+            overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+            min-height: 2.5em; 
+        }
+        .library-item p.library-item-author {
+            font-size: 0.8rem; color: #6b7280; margin-bottom: 0.75rem;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .dark-mode .library-item p.library-item-author { color: #9ca3af; }
+        .sepia-mode .library-item p.library-item-author { color: #8a7565; }
+        
+        .library-item-actions { margin-top: auto; display: flex; gap: 0.5rem; flex-wrap: wrap; padding-top: 0.5rem;}
+        .library-item-actions .btn { flex-grow: 1; font-size: 0.8rem; padding: 0.4rem 0.8rem;}
+
+        .library-item-progress-container {
+            width: 100%;
+            background-color: var(--progress-bar-bg);
+            border-radius: 0.25rem;
+            height: 8px;
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+        }
+        .library-item-progress-bar {
+            height: 100%;
+            background-color: var(--progress-bar-fill);
+            border-radius: 0.25rem;
+            transition: width 0.3s ease;
+        }
+        
+    </style>
+</head>
+<body class="flex flex-col">
+    <div id="appLoadingSpinner" class="spinner" style="display: block;"></div>
+
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-3xl font-bold mb-6 text-center">Iniciar Sesión</h2>
+            <form id="loginForm">
+                <div class="mb-4">
+                    <label for="loginEmail" class="block text-sm font-medium mb-1">Email:</label>
+                    <input type="email" id="loginEmail" name="email" class="form-input" required>
+                </div>
+                <div class="mb-6">
+                    <label for="loginPassword" class="block text-sm font-medium mb-1">Contraseña:</label>
+                    <input type="password" id="loginPassword" name="password" class="form-input" required>
+                </div>
+                <button type="submit" class="w-full btn btn-primary mb-4">Ingresar</button>
+            </form>
+            <div id="login-error-message" class="message-base error-message"></div>
+            <p class="text-center text-sm mt-4">
+                ¿No tienes una cuenta?
+                <button id="showRegisterModal" class="btn-link">Regístrate aquí</button>
+            </p>
+        </div>
+    </div>
+
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-3xl font-bold mb-6 text-center">Crear Cuenta</h2>
+            <form id="registerForm">
+                <div class="mb-4">
+                    <label for="registerUsername" class="block text-sm font-medium mb-1">Nombre de Usuario (opcional):</label>
+                    <input type="text" id="registerUsername" name="registerUsername" class="form-input">
+                </div>
+                <div class="mb-4">
+                    <label for="registerEmail" class="block text-sm font-medium mb-1">Email:</label>
+                    <input type="email" id="registerEmail" name="registerEmail" class="form-input" required>
+                </div>
+                <div class="mb-4">
+                    <label for="registerPassword" class="block text-sm font-medium mb-1">Contraseña:</label>
+                    <input type="password" id="registerPassword" name="registerPassword" class="form-input" required>
+                </div>
+                <div class="mb-6">
+                    <label for="confirmPassword" class="block text-sm font-medium mb-1">Confirmar Contraseña:</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" class="form-input" required>
+                </div>
+                <button type="submit" class="w-full btn btn-primary mb-4">Registrarme</button>
+            </form>
+            <div id="register-error-message" class="message-base error-message"></div>
+            <div id="register-success-message" class="message-base success-message"></div>
+            <p class="text-center text-sm mt-4">
+                ¿Ya tienes una cuenta?
+                <button id="showLoginModalFromRegister" class="btn-link">Inicia sesión</button>
+            </p>
+        </div>
+    </div>
+
+    <div id="footnoteModal" class="modal">
+        <div class="modal-content footnote-modal-content">
+            <div class="modal-header flex justify-between items-center pb-2 mb-3 border-b border-[var(--footnote-popup-border)]">
+                <h4 class="text-lg font-semibold">Nota al Pie</h4>
+                <button id="closeFootnoteModal" class="text-2xl font-bold leading-none hover:text-red-500 dark:hover:text-red-400" aria-label="Cerrar nota">&times;</button>
+            </div>
+            <div id="footnoteModalBody" class="modal-body prose dark:prose-invert max-w-none text-sm">
+            </div>
+        </div>
+    </div>
+
+
+    <div id="readerAppContainer" class="flex-grow flex flex-col"> 
+        <header id="appHeader" class="mb-6 p-4 bg-white rounded-lg shadow-md flex flex-col sm:flex-row justify-between items-center">
+             <div class="flex items-center">
+                <button id="libraryViewLink" class="btn btn-sm btn-secondary mr-3 flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 6.878V6a2.25 2.25 0 012.25-2.25h7.5A2.25 2.25 0 0118 6v.878m-12 0c.235-.083.487-.128.75-.128h10.5c.263 0 .515.045.75.128m-12 0A2.25 2.25 0 004.5 9v.878m13.5-3A2.25 2.25 0 0119.5 9v.878m0 0a2.246 2.246 0 00-.75-.128H5.25c-.263 0-.515.045-.75.128m15 0A2.25 2.25 0 0121 12v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6c0-.98.626-1.813 1.5-2.122" />
+                    </svg>
+                    <span>Biblioteca</span>
+                </button>
+                <button id="toggleTocButton" class="md:hidden btn btn-sm btn-secondary mr-3" aria-label="Toggle Table of Contents">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                    </svg>
+                </button>
+                <img id="appLogoImg" alt="Logo Lector" class="w-7 h-7 mr-2"> 
+                <h1 class="text-2xl sm:text-3xl font-bold text-blue-600">Lector de EPUB</h1>
+            </div>
+            <div class="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-3 mt-4 sm:mt-0">
+                <span id="welcomeMessage" class="font-medium text-sm sm:text-base"></span>
+                <button id="toggleFullscreenButton" class="btn btn-sm flex items-center gap-1"> 
+                    <svg id="fullscreenIconOpen" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                    </svg>
+                    <svg id="fullscreenIconClose" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 hidden">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
+                    </svg>
+                    <span id="fullscreenButtonText">Ampliar y leer</span>
+                </button>
+                <button id="modeToggle" aria-label="Toggle dark mode">Modo</button>
+                <button id="logoutButton" class="btn btn-secondary btn-sm w-full sm:w-auto">Cerrar Sesión</button>
+            </div>
+        </header>
+
+        <div id="readerView" class="flex-grow flex flex-col"> 
+            <main id="mainContent" class="bg-white p-4 rounded-lg shadow-md flex-grow flex flex-col md:flex-row gap-4 overflow-hidden">
+                <div id="tocOverlay" class="md:hidden"></div> 
+                <nav id="tocNavigator" class="w-full md:w-60 lg:w-72 bg-gray-50 p-3 rounded-md shadow overflow-y-auto flex-shrink-0">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-lg font-semibold text-gray-700">Índice</h3>
+                        <button id="closeTocButton" class="md:hidden btn btn-sm btn-link p-1" aria-label="Close Table of Contents">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    </div>
+                    <div id="tocContainer" class="text-sm">
+                        <p class="text-gray-500 italic">Cargue un EPUB para ver el índice.</p>
+                    </div>
+                    <div id="bookmarksContainer" class="mt-4">
+                        <h4 class="text-md font-semibold text-gray-700 mb-2">Marcadores</h4>
+                        <button id="addBookmarkButton" class="btn btn-primary btn-sm w-full mb-2" disabled>Añadir Marcador</button>
+                        <div id="bookmarksList" class="text-sm">
+                             <p class="text-gray-500 italic text-xs">Cargue un libro para ver marcadores.</p>
+                        </div>
+                    </div>
+                </nav>
+
+                <div id="readerContentArea" class="flex-grow flex flex-col min-w-0"> 
+                    <div id="viewerContainer" class="relative rounded-md overflow-hidden flex-grow">
+                        <div id="viewer" class="w-full h-full bg-gray-50 text-center">
+                            <p id="viewerPlaceholder" class="p-4">Seleccione un libro de la biblioteca para comenzar a leer.</p>
+                            <div id="viewerLoadingSpinner" class="spinner"></div>
+                        </div>
+                        <div id="navigation">
+                            <button id="prev" aria-label="Previous page">&lt;</button>
+                            <button id="next" aria-label="Next page">&gt;</button>
+                        </div>
+                        </div>
+                    <div id="fontControlsContainer"> 
+                        <button id="toggleTocFullscreenButton" class="btn btn-sm btn-secondary flex items-center gap-1"> 
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" /></svg>
+                            <span>Índice</span> 
+                        </button>
+                        <div id="fontFamilyControls" class="flex items-center gap-2 p-2 bg-gray-100 rounded-md">
+                            <span class="text-sm font-medium mr-1">Fuente:</span>
+                            <button id="fontFamilySansSerif" class="btn btn-sm">Sans</button>
+                            <button id="fontFamilySerif" class="btn btn-sm">Serif</button>
+                        </div>
+                        <div id="fontControlsGroup" class="flex items-center gap-2 p-2 bg-gray-100 rounded-md">
+                            <div id="fontSizeControls" class="flex items-center gap-2">
+                                <span class="text-sm font-medium mr-1">Tamaño:</span>
+                                <button id="fontSizeDecrease" class="btn btn-secondary btn-sm" aria-label="Decrease font size">A-</button>
+                                <button id="fontSizeIncrease" class="btn btn-secondary btn-sm" aria-label="Increase font size">A+</button>
+                            </div>
+                        </div>
+                        <div id="advancedFontControlsGroup" class="flex items-center gap-2 p-2 bg-gray-100 rounded-md">
+                            <div id="textAlignControls" class="flex items-center gap-1 ml-2">
+                                <span class="text-sm font-medium mr-1">Justificación:</span>
+                                <button id="textAlignLeft" class="btn btn-secondary btn-sm">Izq.</button>
+                                <button id="textAlignJustify" class="btn btn-secondary btn-sm">Just.</button>
+                            </div>
+                        </div>
+                        <button id="exitFullscreenBottomButton" class="btn btn-sm btn-secondary flex items-center gap-1"> 
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" /></svg>
+                            <span>Salir</span> 
+                        </button>
+                    </div>
+                    <div id="locationDisplayContainer" class="text-center text-sm mt-1 mb-2">
+                        <span id="location"></span>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <div id="libraryView" class="hidden flex-grow p-4 md:p-6 relative">
+            <button id="exitFullscreenLibraryButton" class="btn btn-secondary btn-sm fixed top-4 right-4 z-50 hidden items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" /></svg>
+                <span>Salir Pantalla Completa</span>
+            </button>
+            <h2 class="text-2xl font-bold mb-6 text-gray-700 dark:text-gray-200">Mi Biblioteca</h2>
+            <div id="collectionFilters" class="flex flex-wrap gap-2 mb-6">
+                <button data-collection="all" class="btn btn-sm btn-secondary">Mostrar Todos</button>
+                <button data-collection="Ciencias" class="btn btn-sm btn-secondary">Ciencias</button>
+                <button data-collection="Sociedad en movimiento" class="btn btn-sm btn-secondary">Sociedad en movimiento</button>
+                <button data-collection="Aulas" class="btn btn-sm btn-secondary">Aulas</button>
+            </div>
+            <div id="libraryMessage" class="message-base mb-4"></div>
+            <div id="libraryGrid" class="library-grid">
+                <!-- Los libros de la biblioteca remota se insertarán aquí -->
+            </div>
+            <p id="emptyLibraryMessage" class="text-center text-gray-500 dark:text-gray-400 mt-8 hidden">
+                Tu biblioteca está vacía o no se pudo cargar.
+            </p>
+        </div>
+    </div> 
+    <footer id="appFooter" class="mt-auto text-center text-sm py-4">
+        <p>&copy; <span id="year"></span> Lector EPUB Mejorado. Todos los derechos reservados.</p>
+    </footer>
+
+    <script type="module">
+        // --- Global DOM Variables ---
+        const loginModal = document.getElementById('loginModal');
+        const registerModal = document.getElementById('registerModal');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const loginErrorMessage = document.getElementById('login-error-message');
+        const registerErrorMessage = document.getElementById('register-error-message');
+        const registerSuccessMessage = document.getElementById('register-success-message');
+        
+        const readerAppContainer = document.getElementById('readerAppContainer'); 
+        const appHeader = document.getElementById('appHeader');
+        const appFooter = document.getElementById('appFooter');
+        const readerView = document.getElementById('readerView'); 
+        const libraryView = document.getElementById('libraryView'); 
+        const libraryGrid = document.getElementById('libraryGrid');
+        const libraryMessage = document.getElementById('libraryMessage');
+        const emptyLibraryMessage = document.getElementById('emptyLibraryMessage');
+        const libraryViewLink = document.getElementById('libraryViewLink');
+        const appLogoImg = document.getElementById('appLogoImg'); 
+
+        const logoutButton = document.getElementById('logoutButton');
+        const viewer = document.getElementById('viewer');
+        const viewerPlaceholder = document.getElementById('viewerPlaceholder');
+        const viewerLoadingSpinner = document.getElementById('viewerLoadingSpinner');
+        const prevButton = document.getElementById('prev');
+        const nextButton = document.getElementById('next');
+        const locationDisplay = document.getElementById('location');
+        const showRegisterModalButton = document.getElementById('showRegisterModal');
+        const showLoginModalFromRegisterButton = document.getElementById('showLoginModalFromRegister');
+        const welcomeMessage = document.getElementById('welcomeMessage');
+        const modeToggle = document.getElementById('modeToggle');
+        document.getElementById('year').textContent = new Date().getFullYear();
+        const appLoadingSpinner = document.getElementById('appLoadingSpinner');
+
+        const tocNavigator = document.getElementById('tocNavigator');
+        const tocContainer = document.getElementById('tocContainer');
+        const toggleTocButton = document.getElementById('toggleTocButton'); 
+        const closeTocButton = document.getElementById('closeTocButton'); 
+        const tocOverlay = document.getElementById('tocOverlay');
+        const toggleTocFullscreenButton = document.getElementById('toggleTocFullscreenButton'); 
+
+        const fontControlsContainer = document.getElementById('fontControlsContainer');
+        const fontSizeDecreaseButton = document.getElementById('fontSizeDecrease');
+        const fontSizeIncreaseButton = document.getElementById('fontSizeIncrease');
+        const fontFamilySansSerifButton = document.getElementById('fontFamilySansSerif');
+        const fontFamilySerifButton = document.getElementById('fontFamilySerif');
+
+        const advancedFontControlsGroup = document.getElementById('advancedFontControlsGroup');
+        const textAlignLeft = document.getElementById('textAlignLeft');
+        const textAlignJustify = document.getElementById('textAlignJustify');
+
+        const toggleFullscreenButton = document.getElementById('toggleFullscreenButton');
+        const fullscreenIconOpen = document.getElementById('fullscreenIconOpen');
+        const fullscreenIconClose = document.getElementById('fullscreenIconClose');
+        const fullscreenButtonText = document.getElementById('fullscreenButtonText');
+        const exitFullscreenBottomButton = document.getElementById('exitFullscreenBottomButton');
+        const exitFullscreenLibraryButton = document.getElementById('exitFullscreenLibraryButton');
+        
+        const addBookmarkButton = document.getElementById('addBookmarkButton');
+        const bookmarksList = document.getElementById('bookmarksList');
+
+        const footnoteModal = document.getElementById('footnoteModal');
+        const footnoteModalBody = document.getElementById('footnoteModalBody');
+        const closeFootnoteModalButton = document.getElementById('closeFootnoteModal');
+
+        const collectionFiltersContainer = document.getElementById('collectionFilters');
+        let currentCollectionFilter = 'all'; 
+
+        let book = null;
+        let rendition = null;
+        let currentTocItems = []; 
+        let currentBookIdentifier = null; 
+        let remoteLibraryBooks = [];
+
+        const REMOTE_LIBRARY_CONFIG = {
+            baseUrl: "https://tu-usuario.github.io/tu-repositorio/", 
+            indexFile: "library_index.json" 
+        };
+
+        const APP_LOGO_CONFIG = {
+            light: "https://placehold.co/48x48/2563eb/ffffff?text=LogoC", 
+            dark: "https://placehold.co/48x48/60a5fa/1a202c?text=LogoO",   
+            sepia: "https://placehold.co/48x48/705a4b/f4ecd8?text=LogoS"  
+        };
+
+        const MOCK_LIBRARY_INDEX = [
+          {
+            "id": "origen-de-las-especies",
+            "title": "El Origen de las Especies",
+            "author": "Charles Darwin",
+            "collection": "Ciencias", 
+            "epubUrl": "epubs/origen-especies.epub", 
+            "coverImageUrl": "covers/origen-especies.jpg" 
+          },
+          {
+            "id": "vigilar-y-castigar",
+            "title": "Vigilar y Castigar",
+            "author": "Michel Foucault",
+            "collection": "Sociedad en movimiento", 
+            "epubUrl": "epubs/vigilar-y-castigar.epub",
+            "coverImageUrl": "covers/vigilar-y-castigar.jpg"
+          },
+           {
+            "id": "pedagogia-del-oprimido",
+            "title": "Pedagogía del Oprimido",
+            "author": "Paulo Freire",
+            "collection": "Aulas", 
+            "epubUrl": "epubs/pedagogia-oprimido.epub",
+            "coverImageUrl": "covers/pedagogia-oprimido.jpg"
+          }
+        ];
+
+
+        const defaultUserPreferences = {
+            fontSizePercent: 100, 
+            fontFamily: 'sans-serif', 
+            mode: 'light', 
+            lastCfi: null, 
+            lastBookIdentifier: null, 
+            textAlign: 'left', 
+        };
+        let userPreferences = { ...defaultUserPreferences }; 
+
+        const LS_USERS_KEY = 'epubReaderLocalUsers_v2'; 
+        const LS_LOGGED_IN_USER_KEY = 'epubReaderLoggedInUserEmail_v2'; 
+        const LS_USER_PREFS_PREFIX = 'epubReaderUserPrefs_v2_'; 
+        const LS_USER_BOOK_DATA_PREFIX = 'epubReaderBookData_v2_';
+
+
+        function openModal(modalElement) { if (modalElement) modalElement.style.display = 'flex'; }
+        function closeModal(modalElement) { if (modalElement) modalElement.style.display = 'none'; }
+        function displayMessage(element, message, isSuccess = false, autoHide = true) {
+            if (!element) return;
+            element.textContent = message;
+            element.className = `message-base ${isSuccess ? 'success-message' : 'error-message'}`;
+            element.style.display = 'block';
+            if (autoHide) { 
+                 setTimeout(() => hideMessage(element), isSuccess ? 3000 : 5000);
+            }
+        }
+        function hideMessage(element) {
+            if (element) { element.style.display = 'none'; element.textContent = '';}
+        }
+
+        let debouncedResizeTimer;
+        function debouncedHandleRenditionResize() {
+            clearTimeout(debouncedResizeTimer);
+            debouncedResizeTimer = setTimeout(() => {
+                if (rendition && rendition.manager && viewer.offsetParent !== null) { 
+                    requestAnimationFrame(() => { 
+                        const viewerElement = document.getElementById('viewer');
+                        if (viewerElement && viewerElement.offsetParent !== null && viewerElement.offsetWidth > 0 && viewerElement.offsetHeight > 0) {
+                            rendition.resize();
+                        }
+                    });
+                }
+            }, 250); 
+        }
+        window.addEventListener('resize', debouncedHandleRenditionResize);
+
+        function triggerRenditionResize(delay = 150) { 
+            if (rendition && rendition.manager && viewer.offsetParent !== null) {
+                setTimeout(() => {
+                    requestAnimationFrame(() => {
+                        const viewerElement = document.getElementById('viewer');
+                        if (viewerElement && viewerElement.offsetParent !== null && viewerElement.offsetWidth > 0 && viewerElement.offsetHeight > 0) {
+                            rendition.resize();
+                        }
+                    });
+                }, delay);
+            }
+        }
+
+        function getLocalUsers() {
+            const usersJson = localStorage.getItem(LS_USERS_KEY);
+            return usersJson ? JSON.parse(usersJson) : [];
+        }
+        function saveLocalUsers(users) {
+            localStorage.setItem(LS_USERS_KEY, JSON.stringify(users));
+        }
+        function getLoggedInUserEmail() {
+            return localStorage.getItem(LS_LOGGED_IN_USER_KEY);
+        }
+        function setLoggedInUserEmail(email) {
+            if (email) {
+                localStorage.setItem(LS_LOGGED_IN_USER_KEY, email);
+            } else {
+                localStorage.removeItem(LS_LOGGED_IN_USER_KEY);
+            }
+        }
+        function saveUserPreferences() {
+            const loggedInEmail = getLoggedInUserEmail();
+            if (!loggedInEmail) return;
+            try {
+                localStorage.setItem(LS_USER_PREFS_PREFIX + loggedInEmail, JSON.stringify(userPreferences));
+            } catch (e) {
+                console.error("Error saving preferences to localStorage:", e);
+                 if (e.name === 'QuotaExceededError') {
+                    displayMessage(libraryMessage, 'Error: No hay suficiente espacio para guardar preferencias.', false, false);
+                }
+            }
+        }
+        function loadUserPreferences() {
+            const loggedInEmail = getLoggedInUserEmail();
+            if (!loggedInEmail) {
+                userPreferences = { ...defaultUserPreferences }; 
+                return;
+            }
+            const prefsJson = localStorage.getItem(LS_USER_PREFS_PREFIX + loggedInEmail);
+            if (prefsJson) {
+                try {
+                    const loadedPrefs = JSON.parse(prefsJson);
+                    userPreferences = { ...defaultUserPreferences, ...loadedPrefs };
+                } catch (e) {
+                    userPreferences = { ...defaultUserPreferences }; 
+                }
+            } else {
+                userPreferences = { ...defaultUserPreferences }; 
+                saveUserPreferences(); 
+            }
+        }
+        
+        function getBookDataKey(bookId) {
+            const loggedInEmail = getLoggedInUserEmail();
+            if (!loggedInEmail || !bookId) return null;
+            return LS_USER_BOOK_DATA_PREFIX + loggedInEmail + '_' + bookId;
+        }
+
+        function loadBookUserData(bookId) {
+            const key = getBookDataKey(bookId);
+            if (!key) return { lastCfi: null, lastPercentage: 0, bookmarks: [] };
+            const dataJson = localStorage.getItem(key);
+            try {
+                const parsedData = dataJson ? JSON.parse(dataJson) : {};
+                return {
+                    lastCfi: parsedData.lastCfi || null,
+                    lastPercentage: parsedData.lastPercentage || 0,
+                    bookmarks: Array.isArray(parsedData.bookmarks) ? parsedData.bookmarks : []
+                };
+            } catch (e) {
+                console.error(`Error parsing book data for ${bookId}:`, e);
+                return { lastCfi: null, lastPercentage: 0, bookmarks: [] };
+            }
+        }
+
+        function saveBookUserData(bookId, data) {
+            const key = getBookDataKey(bookId);
+            if (!key) return;
+            try {
+                const currentData = loadBookUserData(bookId); 
+                const newData = { ...currentData, ...data }; 
+                localStorage.setItem(key, JSON.stringify(newData));
+            } catch (e) {
+                console.error(`Error saving book data for ${bookId}:`, e);
+                 if (e.name === 'QuotaExceededError') {
+                    displayMessage(libraryMessage, 'Error: Límite de almacenamiento alcanzado. No se pudo guardar el progreso del libro.', false, false);
+                }
+            }
+        }
+        
+        function addBookBookmark(bookId, cfi, label) {
+            const bookData = loadBookUserData(bookId);
+            if (!bookData.bookmarks.some(bm => bm.cfi === cfi)) {
+                bookData.bookmarks.push({ cfi, label: label || `Posición ${cfi.slice(8,20)}...`, timestamp: new Date().toISOString() });
+                saveBookUserData(bookId, { bookmarks: bookData.bookmarks });
+                renderBookmarksForCurrentBook(); 
+            } else {
+                 displayMessage(libraryMessage, "Este marcador ya existe.", false, true);
+            }
+        }
+
+        function removeBookBookmark(bookId, cfiToRemove) {
+            const bookData = loadBookUserData(bookId);
+            bookData.bookmarks = bookData.bookmarks.filter(bm => bm.cfi !== cfiToRemove);
+            saveBookUserData(bookId, { bookmarks: bookData.bookmarks });
+            renderBookmarksForCurrentBook(); 
+        }
+
+        function renderBookmarksForCurrentBook() {
+            bookmarksList.innerHTML = ''; 
+            if (!currentBookIdentifier) {
+                bookmarksList.innerHTML = '<p class="text-gray-500 italic text-xs">Seleccione un libro para ver marcadores.</p>';
+                addBookmarkButton.disabled = true;
+                return;
+            }
+            addBookmarkButton.disabled = false;
+
+            const bookData = loadBookUserData(currentBookIdentifier);
+
+            if (bookData.bookmarks && bookData.bookmarks.length > 0) {
+                const ul = document.createElement('ul');
+                bookData.bookmarks.sort((a,b) => a.cfi.localeCompare(b.cfi)); 
+                bookData.bookmarks.forEach(bookmark => {
+                    const li = document.createElement('li');
+                    const textSpan = document.createElement('span');
+                    textSpan.className = 'bookmark-text';
+                    textSpan.textContent = bookmark.label || `Marcador en ${bookmark.cfi.substring(8, 18)}...`;
+                    textSpan.title = `Ir a: ${bookmark.label}\nCFI: ${bookmark.cfi}`;
+                    textSpan.addEventListener('click', () => {
+                        if (rendition) rendition.display(bookmark.cfi);
+                        if (window.innerWidth < 768 && !document.body.classList.contains('epub-fullscreen')) { 
+                            tocNavigator.classList.remove('open');
+                            tocOverlay.classList.remove('open');
+                        } else if (document.body.classList.contains('epub-fullscreen')) {
+                            tocNavigator.classList.remove('toc-fullscreen-open');
+                        }
+                    });
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'delete-bookmark-btn';
+                    deleteBtn.innerHTML = '&times;';
+                    deleteBtn.title = 'Eliminar marcador';
+                    deleteBtn.setAttribute('aria-label', 'Eliminar marcador');
+                    deleteBtn.addEventListener('click', (e) => {
+                        e.stopPropagation(); 
+                        showCustomConfirm(`¿Eliminar el marcador "${bookmark.label}"?`, () => {
+                             removeBookBookmark(currentBookIdentifier, bookmark.cfi);
+                        });
+                    });
+                    li.appendChild(textSpan);
+                    li.appendChild(deleteBtn);
+                    ul.appendChild(li);
+                });
+                bookmarksList.appendChild(ul);
+            } else {
+                bookmarksList.innerHTML = '<p class="text-gray-500 italic text-xs">No hay marcadores para este libro.</p>';
+            }
+        }
+        
+        function updateFullscreenButtonsVisibility() {
+            const isFullscreen = document.body.classList.contains('epub-fullscreen');
+            const isLibraryVisible = !libraryView.classList.contains('hidden');
+            
+            if (toggleFullscreenButton) {
+                fullscreenButtonText.textContent = isFullscreen ? 'Reducir y salir' : 'Ampliar y leer'; 
+                fullscreenIconOpen.classList.toggle('hidden', isFullscreen);
+                fullscreenIconClose.classList.toggle('hidden', !isFullscreen);
+            }
+
+            if (exitFullscreenLibraryButton) {
+                exitFullscreenLibraryButton.style.display = (isFullscreen && isLibraryVisible) ? 'flex' : 'none';
+            }
+        }
+
+
+        function showReader() { 
+             readerView.classList.remove('hidden');
+             libraryView.classList.add('hidden');
+             libraryViewLink.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6.878V6a2.25 2.25 0 012.25-2.25h7.5A2.25 2.25 0 0118 6v.878m-12 0c.235-.083.487-.128.75-.128h10.5c.263 0 .515.045.75.128m-12 0A2.25 2.25 0 004.5 9v.878m13.5-3A2.25 2.25 0 0119.5 9v.878m0 0a2.246 2.246 0 00-.75-.128H5.25c-.263 0-.515.045-.75.128m15 0A2.25 2.25 0 0121 12v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6c0-.98.626-1.813 1.5-2.122" /></svg><span>Biblioteca</span>`;
+             updateFullscreenButtonsVisibility();
+             triggerRenditionResize(300); 
+        }
+        function showLibrary() { 
+            readerView.classList.add('hidden');
+            libraryView.classList.remove('hidden');
+            libraryViewLink.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg><span>Lector</span>`;
+            renderRemoteLibraryView(remoteLibraryBooks);
+            updateFullscreenButtonsVisibility();
+        }
+        libraryViewLink.addEventListener('click', () => {
+            if (libraryView.classList.contains('hidden')) {
+                showLibrary();
+            } else {
+                showReader();
+            }
+        });
+
+        function renderRemoteLibraryView(booksToRender) {
+            libraryGrid.innerHTML = ''; 
+            hideMessage(libraryMessage);
+
+            const filteredBooks = booksToRender.filter(book => {
+                if (currentCollectionFilter === 'all') {
+                    return true;
+                }
+                return book.collection === currentCollectionFilter;
+            });
+
+
+            if (!filteredBooks || filteredBooks.length === 0) {
+                emptyLibraryMessage.classList.remove('hidden');
+                emptyLibraryMessage.textContent = currentCollectionFilter === 'all' 
+                    ? "Tu biblioteca está vacía o no se pudo cargar."
+                    : `No hay libros en la colección "${currentCollectionFilter}".`;
+            } else {
+                 emptyLibraryMessage.classList.add('hidden');
+            }
+
+            filteredBooks.sort((a,b) => (a.title || "").localeCompare(b.title || "")); 
+
+            filteredBooks.forEach(bookItem => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'library-item';
+                
+                const coverImg = document.createElement('img');
+                coverImg.className = 'library-item-cover';
+                coverImg.src = bookItem.coverImageUrl ? (new URL(bookItem.coverImageUrl, REMOTE_LIBRARY_CONFIG.baseUrl).href) : 'https://placehold.co/200x280/e0e0e0/777777?text=Sin+Portada'; 
+                coverImg.alt = `Portada de ${bookItem.title}`;
+                coverImg.onerror = function() { this.src = 'https://placehold.co/200x280/e0e0e0/777777?text=Error'; };
+                itemDiv.appendChild(coverImg);
+
+                const title = document.createElement('h3');
+                title.textContent = bookItem.title || bookItem.id;
+                title.title = bookItem.title || bookItem.id;
+                itemDiv.appendChild(title);
+
+                const author = document.createElement('p');
+                author.className = 'library-item-author';
+                author.textContent = bookItem.author || 'Autor desconocido';
+                itemDiv.appendChild(author);
+
+                const bookUserData = loadBookUserData(bookItem.id);
+                const progressContainer = document.createElement('div');
+                progressContainer.className = 'library-item-progress-container';
+                const progressBar = document.createElement('div');
+                progressBar.className = 'library-item-progress-bar';
+                progressBar.style.width = `${bookUserData.lastPercentage || 0}%`;
+                progressBar.title = `Progreso: ${bookUserData.lastPercentage || 0}%`;
+                progressContainer.appendChild(progressBar);
+                itemDiv.appendChild(progressContainer);
+
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'library-item-actions';
+
+                const readButton = document.createElement('button');
+                readButton.textContent = 'Leer Libro';
+                readButton.className = 'btn btn-primary btn-sm';
+                readButton.addEventListener('click', () => {
+                    handleLoadRemoteBook(bookItem);
+                });
+                actionsDiv.appendChild(readButton);
+                itemDiv.appendChild(actionsDiv);
+
+                libraryGrid.appendChild(itemDiv);
+            });
+            
+            const filterButtons = collectionFiltersContainer.querySelectorAll('button');
+            filterButtons.forEach(button => {
+                const collection = button.dataset.collection;
+                button.classList.remove('active', 'btn-primary'); 
+                button.classList.add('btn-secondary');
+
+                if (collection === currentCollectionFilter) {
+                    button.classList.remove('btn-secondary');
+                    button.classList.add('active'); 
+                }
+            });
+        }
+        
+        async function fetchAndRenderRemoteLibrary() {
+            displayMessage(libraryMessage, "Cargando biblioteca...", true, false);
+            try {
+                // --- Production code: Fetch from remote server ---
+                // const response = await fetch(new URL(REMOTE_LIBRARY_CONFIG.indexFile, REMOTE_LIBRARY_CONFIG.baseUrl).href);
+                // if (!response.ok) {
+                //     throw new Error(`HTTP error! status: ${response.status}`);
+                // }
+                // remoteLibraryBooks = await response.json();
+                // -------------------------------------------------
+                
+                // --- Development/Mock code: Simulate fetch and use mock data ---
+                console.log(`Simulating fetch from: ${new URL(REMOTE_LIBRARY_CONFIG.indexFile, REMOTE_LIBRARY_CONFIG.baseUrl).href}`);
+                await new Promise(resolve => setTimeout(resolve, 500)); 
+                remoteLibraryBooks = MOCK_LIBRARY_INDEX; 
+                // -------------------------------------------------------------
+
+                hideMessage(libraryMessage);
+                renderRemoteLibraryView(remoteLibraryBooks);
+
+                if (userPreferences.lastBookIdentifier && !book) {
+                    const bookToLoad = remoteLibraryBooks.find(b => b.id === userPreferences.lastBookIdentifier);
+                    if (bookToLoad) {
+                        handleLoadRemoteBook(bookToLoad); 
+                    } else {
+                        userPreferences.lastBookIdentifier = null; 
+                        userPreferences.lastCfi = null;
+                        saveUserPreferences();
+                        showLibrary(); 
+                    }
+                } else if (!book) { 
+                    showLibrary();
+                }
+
+            } catch (error) {
+                console.error("Failed to fetch remote library:", error);
+                displayMessage(libraryMessage, "Error al cargar la biblioteca remota. Usando datos de ejemplo.", false, false);
+                remoteLibraryBooks = MOCK_LIBRARY_INDEX; 
+                renderRemoteLibraryView(remoteLibraryBooks); 
+                showLibrary(); 
+            }
+        }
+
+
+        function handleLoadRemoteBook(bookFromRemoteIndex) {
+            if (!bookFromRemoteIndex || !bookFromRemoteIndex.id || !bookFromRemoteIndex.epubUrl) {
+                console.error("Invalid book data from remote index:", bookFromRemoteIndex);
+                displayMessage(libraryMessage, "Error: Datos del libro inválidos.", false);
+                return;
+            }
+            currentBookIdentifier = bookFromRemoteIndex.id;
+            const fullEpubUrl = new URL(bookFromRemoteIndex.epubUrl, REMOTE_LIBRARY_CONFIG.baseUrl).href;
+            const bookUserData = loadBookUserData(currentBookIdentifier);
+            
+            setupRendition(fullEpubUrl, bookUserData.lastCfi); 
+        }
+
+
+        async function checkLoginStatus() { 
+            if(appLoadingSpinner) appLoadingSpinner.style.display = 'block';
+            const loggedInEmail = getLoggedInUserEmail();
+
+            if (loggedInEmail) {
+                const users = getLocalUsers();
+                const currentUser = users.find(u => u.email === loggedInEmail);
+                if (currentUser) {
+                    welcomeMessage.textContent = `Bienvenido, ${currentUser.username || currentUser.email}!`;
+                    loadUserPreferences();
+                    applyCurrentMode(false); 
+                    updateFontControlButtonsState(); 
+                    updateAdvancedFontControlsUI(); 
+
+                    if (rendition) { 
+                        rendition.themes.select(userPreferences.mode);
+                        applyReaderCustomizations(false); 
+                    } else {
+                         applyCurrentMode(false);
+                    }
+                    
+                    readerAppContainer.classList.remove('hidden'); 
+                    await fetchAndRenderRemoteLibrary(); 
+                    
+                    closeModal(loginModal); closeModal(registerModal);
+                } else {
+                    setLoggedInUserEmail(null); 
+                    showLoginScreen();
+                }
+            } else {
+                showLoginScreen();
+            }
+            updateFullscreenButtonsVisibility();
+            if(appLoadingSpinner) appLoadingSpinner.style.display = 'none';
+        }
+        function showLoginScreen() {
+            readerAppContainer.classList.add('hidden'); 
+            openModal(loginModal);
+            welcomeMessage.textContent = '';
+            if (rendition) rendition.destroy(); if (book) book.destroy();
+            rendition = null; book = null; currentBookIdentifier = null;
+            viewer.innerHTML = ''; viewer.appendChild(viewerPlaceholder);
+            viewerPlaceholder.textContent = 'Seleccione un libro de la biblioteca para comenzar a leer.';
+            locationDisplay.textContent = '';
+            tocContainer.innerHTML = '<p class="text-gray-500 italic">Cargue un EPUB para ver el índice.</p>';
+            
+            document.body.classList.remove('dark-mode', 'sepia-mode', 'epub-fullscreen');
+            userPreferences.mode = 'light'; 
+            modeToggle.textContent = 'Modo Oscuro'; 
+            applyCurrentMode(false); 
+
+            userPreferences = { ...defaultUserPreferences }; 
+            updateFontControlButtonsState(); 
+            updateAdvancedFontControlsUI();
+            renderBookmarksForCurrentBook(); 
+            enableReaderControls(false);
+            updateFullscreenButtonsVisibility(); 
+        }
+
+        showRegisterModalButton.addEventListener('click', () => {
+            closeModal(loginModal); hideMessage(loginErrorMessage);
+            registerForm.reset(); openModal(registerModal);
+        });
+        showLoginModalFromRegisterButton.addEventListener('click', () => {
+            closeModal(registerModal); hideMessage(registerErrorMessage); hideMessage(registerSuccessMessage);
+            loginForm.reset(); openModal(loginModal);
+        });
+
+        registerForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const username = event.target.registerUsername.value.trim();
+            const email = event.target.registerEmail.value.trim();
+            const password = event.target.registerPassword.value;
+            const confirmPassword = event.target.confirmPassword.value;
+
+            hideMessage(registerErrorMessage); hideMessage(registerSuccessMessage);
+            if (!email || !password || !confirmPassword) {
+                displayMessage(registerErrorMessage, 'Email y contraseña son obligatorios.'); return;
+            }
+            if (password.length < 6) {
+                displayMessage(registerErrorMessage, 'La contraseña debe tener al menos 6 caracteres.'); return;
+            }
+            if (password !== confirmPassword) {
+                displayMessage(registerErrorMessage, 'Las contraseñas no coinciden.'); return;
+            }
+
+            const users = getLocalUsers();
+            if (users.find(user => user.email === email)) {
+                displayMessage(registerErrorMessage, 'Este correo electrónico ya está en uso.'); return;
+            }
+            users.push({ username: username || email, email, password }); 
+            saveLocalUsers(users);
+            displayMessage(registerSuccessMessage, '¡Registro exitoso! Ahora puedes iniciar sesión.', true);
+            registerForm.reset();
+            setTimeout(() => {
+                closeModal(registerModal);
+                openModal(loginModal); 
+            } , 2000);
+        });
+
+        loginForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const email = event.target.email.value; 
+            const password = event.target.password.value;
+            hideMessage(loginErrorMessage);
+
+            if (!email || !password) { 
+                displayMessage(loginErrorMessage, 'Email y contraseña son obligatorios.'); return; 
+            }
+            const users = getLocalUsers();
+            const foundUser = users.find(user => user.email === email && user.password === password);
+
+            if (foundUser) {
+                setLoggedInUserEmail(email);
+                checkLoginStatus(); 
+            } else {
+                displayMessage(loginErrorMessage, 'Email o contraseña incorrectos.');
+            }
+        });
+
+        logoutButton.addEventListener('click', () => {
+            setLoggedInUserEmail(null);
+            checkLoginStatus(); 
+        });
+
+        function renderToc(tocItems, parentElement, depth = 0) {
+            const ul = document.createElement('ul');
+            if (depth > 0) ul.classList.add(`toc-depth-${depth}`);
+            tocItems.forEach(item => {
+                const li = document.createElement('li');
+                const a = document.createElement('a');
+                a.textContent = item.label.trim();
+                a.href = item.href;
+                a.dataset.href = item.href; 
+                a.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (rendition) rendition.display(item.href);
+                    if (window.innerWidth < 768 && !document.body.classList.contains('epub-fullscreen')) { 
+                        tocNavigator.classList.remove('open');
+                        tocOverlay.classList.remove('open');
+                    } else if (document.body.classList.contains('epub-fullscreen')) {
+                        tocNavigator.classList.remove('toc-fullscreen-open');
+                    }
+                    triggerRenditionResize(100); 
+                });
+                li.appendChild(a);
+                ul.appendChild(li);
+                currentTocItems.push({element: a, href: item.href, id: item.id});
+                if (item.subitems && item.subitems.length > 0) {
+                    renderToc(item.subitems, li, depth + 1);
+                }
+            });
+            parentElement.appendChild(ul);
+        }
+        function updateActiveTocItem(currentLocation) {
+            if (!book || !currentLocation || !currentLocation.start) return;
+            const currentCfi = currentLocation.start.cfi;
+            const currentSection = book.spine.get(currentCfi);
+            if (!currentSection) return;
+            const currentHref = currentSection.href;
+            let bestMatch = null;
+            currentTocItems.forEach(tocItem => {
+                tocItem.element.classList.remove('active-toc-item');
+                if (currentHref.startsWith(tocItem.href.split('#')[0])) {
+                    if (!bestMatch || tocItem.href.length > bestMatch.href.length) { 
+                        bestMatch = tocItem;
+                    }
+                }
+            });
+            if (bestMatch) {
+                bestMatch.element.classList.add('active-toc-item');
+                if (tocNavigator.offsetParent !== null) { 
+                    bestMatch.element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }
+        }
+
+        toggleTocButton.addEventListener('click', () => { 
+            tocNavigator.classList.toggle('open');
+            tocOverlay.classList.toggle('open');
+            triggerRenditionResize(350); 
+        });
+        closeTocButton.addEventListener('click', () => { 
+            tocNavigator.classList.remove('open');
+            tocOverlay.classList.remove('open');
+            triggerRenditionResize(350);
+        });
+        tocOverlay.addEventListener('click', () => { 
+            tocNavigator.classList.remove('open');
+            tocOverlay.classList.remove('open');
+            triggerRenditionResize(350);
+        });
+        toggleTocFullscreenButton.addEventListener('click', () => { 
+            tocNavigator.classList.toggle('toc-fullscreen-open');
+            triggerRenditionResize(350); 
+        });
+
+        function enableReaderControls(enable) {
+            addBookmarkButton.disabled = !enable;
+        }
+
+        async function setupRendition(bookUrl, cfiToDisplay) { 
+            if (rendition) rendition.destroy();
+            viewer.innerHTML = ''; viewerLoadingSpinner.style.display = 'block';
+            tocContainer.innerHTML = ''; 
+            currentTocItems = []; 
+            
+            enableReaderControls(true);
+
+            book = ePub(bookUrl); 
+            rendition = book.renderTo(viewer, {
+                width: "100%", height: "100%", spread: "auto", flow: "paginated"
+            });
+            
+            rendition.themes.register("dark", { "body": { "color": "#e2e8f0 !important", "background-color": "#1f2937 !important" }, "a": { "color": "#90cdf4 !important" }, "p": {"line-height": "1.6em"}, "::selection": { "background": "#4a5568" } });
+            rendition.themes.register("light", { "body": { "color": "#333333 !important", "background-color": "#f9fafb !important" }, "a": { "color": "#3182ce !important" }, "p": {"line-height": "1.6em"}, "::selection": { "background": "#bee3f8" } });
+            rendition.themes.register("sepia", { "body": { "color": "#5b4636 !important", "background-color": "#f4ecd8 !important" }, "a":   { "color": "#705a4b !important" }, "p":   {"line-height": "1.6em"}, "::selection": { "background": "#dcd0b3" } });
+            
+            rendition.hooks.content.register((view) => { 
+                applyAllUserStylesToView(view); 
+                const links = view.document.querySelectorAll('a[href]');
+                links.forEach(link => {
+                    const href = link.getAttribute('href');
+                    const epubType = link.getAttribute('epub:type');
+                    if ((epubType === 'noteref') || (href && href.startsWith('#') && (href.toLowerCase().includes('fn') || href.toLowerCase().includes('note')))) {
+                        link.addEventListener('click', (event) => handleFootnoteClick(event, view));
+                    }
+                });
+            });
+            
+            const displayed = cfiToDisplay ? rendition.display(cfiToDisplay) : rendition.display();
+
+            displayed.then(async () => { 
+                viewerLoadingSpinner.style.display = 'none';
+                viewerPlaceholder.style.display = 'none';
+                showReader(); 
+                
+                rendition.themes.select(userPreferences.mode); 
+                applyReaderCustomizations(false); 
+                updateFontControlButtonsState(); 
+                updateAdvancedFontControlsUI(); 
+
+                if (currentBookIdentifier) { 
+                    userPreferences.lastBookIdentifier = currentBookIdentifier;
+                    const currentLoc = rendition.currentLocation();
+                    if (currentLoc && currentLoc.start){
+                         saveBookUserData(currentBookIdentifier, { lastCfi: currentLoc.start.cfi });
+                         userPreferences.lastCfi = currentLoc.start.cfi;
+                    }
+                    saveUserPreferences(); 
+                }
+                renderBookmarksForCurrentBook(); 
+                hideMessage(libraryMessage); 
+            }).catch(err => { 
+                console.error("Error displaying rendition:", err);
+                viewerLoadingSpinner.style.display = 'none';
+                viewerPlaceholder.textContent = "Error al cargar el libro desde la URL.";
+                viewerPlaceholder.style.display = 'block';
+                enableReaderControls(false);
+                currentBookIdentifier = null; 
+                showLibrary(); 
+            });
+
+            rendition.on("relocated", (location) => {
+                const currentCfi = location.start.cfi;
+                let percentage = 0; 
+                try {
+                    if (book && book.locations && book.locations.length() > 0) { 
+                         percentage = book.locations.percentageFromCfi(currentCfi);
+                        const page = book.locations.locationFromCfi(currentCfi);
+                        locationDisplay.textContent = `Página: ${page !== undefined && page !== null ? page : '?'} (${Math.round(percentage * 100)}%)`;
+                    } else {
+                         locationDisplay.textContent = `Ubicación: ${currentCfi.substring(8,30)}...`;
+                    }
+                } catch (e) { 
+                    locationDisplay.textContent = `Ubicación: ${currentCfi.substring(8,30)}...`;
+                }
+                
+                if (currentBookIdentifier) {
+                    saveBookUserData(currentBookIdentifier, { 
+                        lastCfi: currentCfi, 
+                        lastPercentage: Math.round(percentage * 100) 
+                    });
+                    userPreferences.lastBookIdentifier = currentBookIdentifier; 
+                    userPreferences.lastCfi = currentCfi;
+                    saveUserPreferences();
+                }
+                updateActiveTocItem(location);
+            });
+            
+            rendition.on("displayed", (section) => { 
+                updateActiveTocItem(rendition.currentLocation());
+            });
+
+            book.ready.then(() => {
+                if (book.navigation && book.navigation.toc && book.navigation.toc.length > 0) {
+                    renderToc(book.navigation.toc, tocContainer);
+                } else {
+                    tocContainer.innerHTML = '<p class="text-gray-500 italic">Este EPUB no tiene índice.</p>';
+                }
+                return book.locations.generate(1650); 
+            }).then(locations => {
+                const currentLocation = rendition?.currentLocation(); 
+                if (rendition && currentLocation && currentLocation.start && currentLocation.start.cfi) { 
+                    const cfi = currentLocation.start.cfi;
+                    const percentage = book.locations.percentageFromCfi(cfi);
+                    const page = book.locations.locationFromCfi(cfi);
+                    locationDisplay.textContent = `Página: ${page !== undefined && page !== null ? page : '?'} (${Math.round(percentage * 100)}%)`;
+                    updateActiveTocItem(currentLocation);
+                    if (currentBookIdentifier) { 
+                         saveBookUserData(currentBookIdentifier, { 
+                            lastCfi: cfi, 
+                            lastPercentage: Math.round(percentage * 100) 
+                        });
+                    }
+                }
+            }).catch(err => console.error("Error processing book readiness/locations:", err));
+        }
+
+
+        prevButton.addEventListener('click', () => rendition && rendition.prev());
+        nextButton.addEventListener('click', () => rendition && rendition.next());
+        document.addEventListener('keydown', (e) => {
+            if (document.body.classList.contains('epub-fullscreen') && e.key === 'Escape') {
+                toggleFullscreenMode();
+            }
+            if (loginModal.style.display === 'flex' || registerModal.style.display === 'flex' || 
+                footnoteModal.style.display === 'flex' || 
+                e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.closest('.modal-content')) return;
+            
+            if (readerView.offsetParent !== null && !libraryView.offsetParent !== null) { 
+                 if (e.key === 'ArrowLeft') rendition && rendition.prev();
+                 else if (e.key === 'ArrowRight') rendition && rendition.next();
+            }
+        });
+
+        function applyAllUserStylesToView(view) { 
+            if (!view || !view.document || !view.document.head) return;
+
+            const oldSheet = view.document.getElementById('customReaderDynamicStyles');
+            if (oldSheet) {
+                oldSheet.parentNode.removeChild(oldSheet);
+            }
+            const styles = `
+                body {
+                    text-align: ${userPreferences.textAlign} !important;
+                }
+            `;
+            const styleSheet = view.document.createElement("style");
+            styleSheet.id = 'customReaderDynamicStyles';
+            styleSheet.type = "text/css";
+            styleSheet.appendChild(view.document.createTextNode(styles));
+            view.document.head.appendChild(styleSheet);
+        }
+
+
+        function applyReaderCustomizations(savePrefs = true) {
+            if (!rendition || !rendition.manager) return; 
+
+            rendition.themes.fontSize(userPreferences.fontSizePercent + '%');
+            rendition.themes.font(userPreferences.fontFamily);
+
+            rendition.views().forEach(view => { 
+                applyAllUserStylesToView(view);
+            });
+            
+            updateFontControlButtonsState();
+            updateAdvancedFontControlsUI(); 
+
+            if (savePrefs) saveUserPreferences();
+
+            setTimeout(() => {
+                requestAnimationFrame(() => { 
+                    if (rendition && rendition.manager && viewer.offsetParent !== null) {
+                        rendition.resize();
+                    }
+                });
+            }, 50); 
+        }
+        
+        function applyCurrentMode(save = true) { 
+            document.body.classList.remove('dark-mode', 'sepia-mode'); 
+            
+            const currentLogoImg = document.getElementById('appLogoImg');
+
+            if (userPreferences.mode === 'dark') {
+                document.body.classList.add('dark-mode');
+                modeToggle.textContent = 'Modo Sepia';
+                if (currentLogoImg && APP_LOGO_CONFIG.dark) currentLogoImg.src = APP_LOGO_CONFIG.dark;
+                else if (currentLogoImg) currentLogoImg.style.display = 'none';
+            } else if (userPreferences.mode === 'sepia') {
+                document.body.classList.add('sepia-mode');
+                modeToggle.textContent = 'Modo Claro';
+                 if (currentLogoImg && APP_LOGO_CONFIG.sepia) currentLogoImg.src = APP_LOGO_CONFIG.sepia;
+                 else if (currentLogoImg) currentLogoImg.style.display = 'none';
+            } else { 
+                modeToggle.textContent = 'Modo Oscuro';
+                 if (currentLogoImg && APP_LOGO_CONFIG.light) currentLogoImg.src = APP_LOGO_CONFIG.light;
+                 else if (currentLogoImg) currentLogoImg.style.display = 'none';
+            }
+             if (currentLogoImg && currentLogoImg.src) currentLogoImg.style.display = 'inline-block';
+
+            if (rendition) {
+                rendition.themes.select(userPreferences.mode); 
+                applyReaderCustomizations(false); 
+            }
+            if (save) saveUserPreferences();
+        }
+
+        modeToggle.addEventListener('click', () => {
+            if (userPreferences.mode === 'light') userPreferences.mode = 'dark';
+            else if (userPreferences.mode === 'dark') userPreferences.mode = 'sepia';
+            else userPreferences.mode = 'light';
+            applyCurrentMode(true);
+        });
+
+        fontSizeDecreaseButton.addEventListener('click', () => {
+            if (userPreferences.fontSizePercent > 50) { 
+                userPreferences.fontSizePercent -= 10; 
+                applyReaderCustomizations(true);
+            }
+        });
+        fontSizeIncreaseButton.addEventListener('click', () => {
+            if (userPreferences.fontSizePercent < 250) { 
+                userPreferences.fontSizePercent += 10; 
+                applyReaderCustomizations(true);
+            }
+        });
+        fontFamilySerifButton.addEventListener('click', () => { 
+            userPreferences.fontFamily = 'serif'; 
+            applyReaderCustomizations(true);
+        });
+        fontFamilySansSerifButton.addEventListener('click', () => { 
+            userPreferences.fontFamily = 'sans-serif'; 
+            applyReaderCustomizations(true);
+        });
+        
+        function updateFontControlButtonsState() {
+            fontFamilySansSerifButton.classList.toggle('btn-primary', userPreferences.fontFamily === 'sans-serif');
+            fontFamilySansSerifButton.classList.toggle('btn-secondary', userPreferences.fontFamily !== 'sans-serif');
+            fontFamilySerifButton.classList.toggle('btn-primary', userPreferences.fontFamily === 'serif');
+            fontFamilySerifButton.classList.toggle('btn-secondary', userPreferences.fontFamily !== 'serif');
+        }
+
+        function updateAdvancedFontControlsUI() {
+            textAlignLeft.classList.toggle('btn-primary', userPreferences.textAlign === 'left');
+            textAlignLeft.classList.toggle('btn-secondary', userPreferences.textAlign !== 'left');
+            textAlignJustify.classList.toggle('btn-primary', userPreferences.textAlign === 'justify');
+            textAlignJustify.classList.toggle('btn-secondary', userPreferences.textAlign !== 'justify');
+        }
+
+        textAlignLeft.addEventListener('click', () => {
+            userPreferences.textAlign = 'left';
+            applyReaderCustomizations(true);
+        });
+        textAlignJustify.addEventListener('click', () => {
+            userPreferences.textAlign = 'justify';
+            applyReaderCustomizations(true);
+        });
+
+        function toggleFullscreenMode() {
+            document.body.classList.toggle('epub-fullscreen');
+            updateFullscreenButtonsVisibility(); 
+
+            if (!document.body.classList.contains('epub-fullscreen')) {
+                tocNavigator.classList.remove('toc-fullscreen-open');
+            } else {
+                 tocNavigator.classList.remove('open'); 
+                 tocOverlay.classList.remove('open');
+            }
+            triggerRenditionResize(350);
+        }
+        toggleFullscreenButton.addEventListener('click', toggleFullscreenMode);
+        exitFullscreenBottomButton.addEventListener('click', toggleFullscreenMode);
+        exitFullscreenLibraryButton.addEventListener('click', toggleFullscreenMode); 
+
+
+        addBookmarkButton.addEventListener('click', () => {
+            if (rendition && currentBookIdentifier) {
+                const currentLocation = rendition.currentLocation();
+                if (currentLocation && currentLocation.start) {
+                    const cfi = currentLocation.start.cfi;
+                    let label = `Posición `;
+                    try {
+                        if (book && book.locations && book.locations.length() > 0) {
+                            const page = book.locations.locationFromCfi(cfi);
+                            const percentage = book.locations.percentageFromCfi(cfi);
+                            label = `Pág. ${page !== undefined && page !== null ? page : '?'} (${Math.round(percentage*100)}%)`;
+                        } else {
+                           label += `${cfi.substring(8,20)}...`;
+                        }
+                    } catch(e) { label += `${cfi.substring(8,20)}...`; }
+
+                    addBookBookmark(currentBookIdentifier, cfi, label);
+                }
+            }
+        });
+
+        collectionFiltersContainer.addEventListener('click', (event) => {
+            if (event.target.tagName === 'BUTTON') {
+                const collection = event.target.dataset.collection;
+                if (collection) {
+                    currentCollectionFilter = collection;
+                    renderRemoteLibraryView(remoteLibraryBooks);
+                }
+            }
+        });
+
+
+        function showCustomConfirm(message, callback) {
+            const confirmModal = document.createElement('div');
+            confirmModal.className = 'modal'; 
+            confirmModal.style.display = 'flex'; 
+            
+            const modalContent = document.createElement('div');
+            modalContent.className = 'modal-content p-6'; 
+
+            const messageP = document.createElement('p');
+            messageP.textContent = message;
+            messageP.className = 'mb-4 text-center whitespace-pre-wrap'; 
+
+            const buttonsDiv = document.createElement('div');
+            buttonsDiv.className = 'flex justify-end gap-3 mt-4';
+
+            const confirmButton = document.createElement('button');
+            confirmButton.textContent = 'Confirmar';
+            confirmButton.className = 'btn btn-primary';
+            confirmButton.onclick = () => {
+                callback();
+                document.body.removeChild(confirmModal);
+            };
+
+            const cancelButton = document.createElement('button');
+            cancelButton.textContent = 'Cancelar';
+            cancelButton.className = 'btn btn-secondary';
+            cancelButton.onclick = () => {
+                document.body.removeChild(confirmModal);
+            };
+
+            buttonsDiv.appendChild(cancelButton);
+            buttonsDiv.appendChild(confirmButton);
+            modalContent.appendChild(messageP);
+            modalContent.appendChild(buttonsDiv);
+            confirmModal.appendChild(modalContent);
+            document.body.appendChild(confirmModal);
+            confirmButton.focus();
+        }
+
+        function showCustomPrompt(message, defaultValue, callback) {
+            const promptModal = document.createElement('div');
+            promptModal.className = 'modal';
+            promptModal.style.display = 'flex';
+
+            const modalContent = document.createElement('div');
+            modalContent.className = 'modal-content p-6';
+
+            const messageP = document.createElement('p');
+            messageP.textContent = message;
+            messageP.className = 'mb-3';
+
+            const inputField = document.createElement('textarea'); 
+            inputField.className = 'form-input w-full mb-4 h-24'; 
+            inputField.value = defaultValue;
+            
+            const buttonsDiv = document.createElement('div');
+            buttonsDiv.className = 'flex justify-end gap-3 mt-4';
+
+            const okButton = document.createElement('button');
+            okButton.textContent = 'Aceptar';
+            okButton.className = 'btn btn-primary';
+            okButton.onclick = () => {
+                callback(inputField.value);
+                document.body.removeChild(promptModal);
+            };
+
+            const cancelButton = document.createElement('button');
+            cancelButton.textContent = 'Cancelar';
+            cancelButton.className = 'btn btn-secondary';
+            cancelButton.onclick = () => {
+                callback(null); 
+                document.body.removeChild(promptModal);
+            };
+
+            buttonsDiv.appendChild(cancelButton);
+            buttonsDiv.appendChild(okButton);
+            modalContent.appendChild(messageP);
+            modalContent.appendChild(inputField);
+            modalContent.appendChild(buttonsDiv);
+            promptModal.appendChild(modalContent);
+            document.body.appendChild(promptModal);
+            inputField.focus();
+            inputField.select();
+        }
+
+        function handleFootnoteClick(event, view) {
+            event.preventDefault();
+            event.stopPropagation(); 
+
+            const href = event.currentTarget.getAttribute('href');
+            if (!href || !href.startsWith('#')) return;
+            const targetId = href.substring(1);
+            const footnoteElement = view.document.getElementById(targetId);
+
+            if (footnoteElement) {
+                footnoteModalBody.innerHTML = ''; 
+                const clonedFootnoteContent = footnoteElement.cloneNode(true);
+                if (clonedFootnoteContent.id === targetId) {
+                    clonedFootnoteContent.removeAttribute('id');
+                }
+                const backlinks = clonedFootnoteContent.querySelectorAll('a[href^="#"], a[rev="footnote"], a[rel="footnote"]');
+                backlinks.forEach(link => {
+                    const linkHref = link.getAttribute('href');
+                     if (linkHref && (linkHref.includes('epub-footnote-') || linkHref.includes('fnref') || linkHref.includes('noteref_') || linkHref === `#${targetId}` || (link.closest('sup') && /^\s*(\d+|[⁎†‡§¶])\s*$/.test(link.textContent.trim())) )) {
+                        link.remove();
+                    }
+                });
+                footnoteModalBody.appendChild(clonedFootnoteContent);
+                openModal(footnoteModal);
+            } else {
+                footnoteModalBody.innerHTML = `<p class="text-red-500">No se pudo encontrar el contenido de la nota al pie (ID: ${targetId}).</p>`;
+                openModal(footnoteModal);
+            }
+        }
+
+        closeFootnoteModalButton.addEventListener('click', () => closeModal(footnoteModal));
+        footnoteModal.addEventListener('click', (event) => {
+            if (event.target === footnoteModal) { 
+                closeModal(footnoteModal);
+            }
+        });
+
+        if(appLoadingSpinner) appLoadingSpinner.style.display = 'none';
+        checkLoginStatus(); 
+
+    </script>
+</body>
+</html>

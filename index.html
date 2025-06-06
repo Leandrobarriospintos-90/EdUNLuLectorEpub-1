@@ -678,7 +678,7 @@
                     </svg>
                 </button>
                 <img id="appLogoImg" alt="Logo Lector" class="w-7 h-7 mr-2"> 
-                <h1 class="text-2xl sm:text-3xl font-bold text-blue-600">Lector de EPUB</h1>
+                <h1 class="text-2xl sm:text-3xl font-bold text-blue-600">EdUNLu EPUB</h1>
             </div>
             <div class="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-3 mt-4 sm:mt-0">
                 <span id="welcomeMessage" class="font-medium text-sm sm:text-base"></span>
@@ -787,7 +787,7 @@
         </div>
     </div> 
     <footer id="appFooter" class="mt-auto text-center text-sm py-4">
-        <p>&copy; <span id="year"></span> Lector EPUB Mejorado. Todos los derechos reservados.</p>
+        <p>&copy; <span id="year"></span>EdUNLu Lector EPUB. Libre y gratuito.</p>
     </footer>
 
     <script type="module">
@@ -866,14 +866,14 @@
         let remoteLibraryBooks = [];
 
         const REMOTE_LIBRARY_CONFIG = {
-            baseUrl: "https://tu-usuario.github.io/tu-repositorio/", 
+            baseUrl: "https://leandrobarriospintos-90.github.io/EdUNLuLectorEpub-1/", 
             indexFile: "library_index.json" 
         };
 
         const APP_LOGO_CONFIG = {
-            light: "https://placehold.co/48x48/2563eb/ffffff?text=LogoC", 
-            dark: "https://placehold.co/48x48/60a5fa/1a202c?text=LogoO",   
-            sepia: "https://placehold.co/48x48/705a4b/f4ecd8?text=LogoS"  
+            light: "https://leandrobarriospintos-90.github.io/EdUNLuLectorEpub-1/light-edunlu-svg.svg", 
+            dark: "https://leandrobarriospintos-90.github.io/EdUNLuLectorEpub-1/dark-edunlu-svg.svg",   
+            sepia: "https://leandrobarriospintos-90.github.io/EdUNLuLectorEpub-1/sepia-edunlu-svg.svg"  
         };
 
         const MOCK_LIBRARY_INDEX = [
@@ -882,16 +882,16 @@
             "title": "El Origen de las Especies",
             "author": "Charles Darwin",
             "collection": "Ciencias", 
-            "epubUrl": "epubs/origen-especies.epub", 
+            "epubUrl": "epub/esas_cosas_edunlu.epub", 
             "coverImageUrl": "covers/origen-especies.jpg" 
           },
           {
-            "id": "vigilar-y-castigar",
-            "title": "Vigilar y Castigar",
-            "author": "Michel Foucault",
+            "id": "esas-cosas-id",
+            "title": "Esas cosas que se saben",
+            "author": "Marcos Tabossi",
             "collection": "Sociedad en movimiento", 
             "epubUrl": "epubs/vigilar-y-castigar.epub",
-            "coverImageUrl": "covers/vigilar-y-castigar.jpg"
+            "coverImageUrl": "covers/tapa_esas_cosas.jpg"
           },
            {
             "id": "pedagogia-del-oprimido",

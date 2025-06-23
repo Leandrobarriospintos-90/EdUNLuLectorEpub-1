@@ -530,6 +530,18 @@
         }
         body.epub-fullscreen #viewer { border-radius: 0 !important; }
 
+        /* NEW STYLES FOR STICKY LIBRARY HEADER */
+        #library-header {
+            background-color: #f0f0f0; /* Light mode body bg */
+            transition: background-color 0.3s ease;
+        }
+        .dark-mode #library-header {
+            background-color: #1a202c; /* Dark mode body bg */
+        }
+        .sepia-mode #library-header {
+            background-color: #f4ecd8; /* Sepia mode body bg */
+        }
+
 
         .library-grid {
             display: grid;
@@ -603,8 +615,8 @@
             <h2 class="text-3xl font-bold mb-6 text-center">Iniciar Sesión</h2>
             <form id="loginForm">
                 <div class="mb-4">
-                    <label for="loginEmail" class="block text-sm font-medium mb-1">Email:</label>
-                    <input type="email" id="loginEmail" name="email" class="form-input" required>
+                    <label for="loginUsername" class="block text-sm font-medium mb-1">Nombre de Usuario:</label>
+                    <input type="text" id="loginUsername" name="username" class="form-input" required>
                 </div>
                 <div class="mb-6">
                     <label for="loginPassword" class="block text-sm font-medium mb-1">Contraseña:</label>
@@ -625,12 +637,8 @@
             <h2 class="text-3xl font-bold mb-6 text-center">Crear Cuenta</h2>
             <form id="registerForm">
                 <div class="mb-4">
-                    <label for="registerUsername" class="block text-sm font-medium mb-1">Nombre de Usuario (opcional):</label>
-                    <input type="text" id="registerUsername" name="registerUsername" class="form-input">
-                </div>
-                <div class="mb-4">
-                    <label for="registerEmail" class="block text-sm font-medium mb-1">Email:</label>
-                    <input type="email" id="registerEmail" name="registerEmail" class="form-input" required>
+                    <label for="registerUsername" class="block text-sm font-medium mb-1">Nombre de Usuario:</label>
+                    <input type="text" id="registerUsername" name="registerUsername" class="form-input" required>
                 </div>
                 <div class="mb-4">
                     <label for="registerPassword" class="block text-sm font-medium mb-1">Contraseña:</label>
@@ -666,34 +674,34 @@
     <div id="readerAppContainer" class="flex-grow flex flex-col"> 
         <header id="appHeader" class="mb-6 p-4 bg-white rounded-lg shadow-md flex flex-col sm:flex-row justify-between items-center">
              <div class="flex items-center">
-                <button id="libraryViewLink" class="btn btn-sm btn-secondary mr-3 flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 6.878V6a2.25 2.25 0 012.25-2.25h7.5A2.25 2.25 0 0118 6v.878m-12 0c.235-.083.487-.128.75-.128h10.5c.263 0 .515.045.75.128m-12 0A2.25 2.25 0 004.5 9v.878m13.5-3A2.25 2.25 0 0119.5 9v.878m0 0a2.246 2.246 0 00-.75-.128H5.25c-.263 0-.515.045-.75.128m15 0A2.25 2.25 0 0121 12v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6c0-.98.626-1.813 1.5-2.122" />
-                    </svg>
-                    <span>Biblioteca</span>
-                </button>
-                <button id="toggleTocButton" class="md:hidden btn btn-sm btn-secondary mr-3" aria-label="Toggle Table of Contents">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                    </svg>
-                </button>
-                <img id="appLogoImg" alt="Logo Lector" class="w-7 h-7 mr-2"> 
-                <h1 class="text-2xl sm:text-3xl font-bold text-blue-600">EdUNLu EPUB</h1>
-            </div>
-            <div class="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-3 mt-4 sm:mt-0">
-                <span id="welcomeMessage" class="font-medium text-sm sm:text-base"></span>
-                <button id="toggleFullscreenButton" class="btn btn-sm flex items-center gap-1"> 
-                    <svg id="fullscreenIconOpen" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
-                    </svg>
-                    <svg id="fullscreenIconClose" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 hidden">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
-                    </svg>
-                    <span id="fullscreenButtonText">Ampliar y leer</span>
-                </button>
-                <button id="modeToggle" aria-label="Toggle dark mode">Modo</button>
-                <button id="logoutButton" class="btn btn-secondary btn-sm w-full sm:w-auto">Cerrar Sesión</button>
-            </div>
+                 <button id="libraryViewLink" class="btn btn-sm btn-secondary mr-3 flex items-center gap-1">
+                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 6.878V6a2.25 2.25 0 012.25-2.25h7.5A2.25 2.25 0 0118 6v.878m-12 0c.235-.083.487-.128.75-.128h10.5c.263 0 .515.045.75.128m-12 0A2.25 2.25 0 004.5 9v.878m13.5-3A2.25 2.25 0 0119.5 9v.878m0 0a2.246 2.246 0 00-.75-.128H5.25c-.263 0-.515.045-.75.128m15 0A2.25 2.25 0 0121 12v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6c0-.98.626-1.813 1.5-2.122" />
+                     </svg>
+                     <span>Biblioteca</span>
+                 </button>
+                 <button id="toggleTocButton" class="md:hidden btn btn-sm btn-secondary mr-3" aria-label="Toggle Table of Contents">
+                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                         <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                     </svg>
+                 </button>
+                 <img id="appLogoImg" alt="Logo Lector" class="w-7 h-7 mr-2"> 
+                 <h1 class="text-2xl sm:text-3xl font-bold text-blue-600">EPUB</h1>
+             </div>
+             <div class="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-3 mt-4 sm:mt-0">
+                 <span id="welcomeMessage" class="font-medium text-sm sm:text-base"></span>
+                 <button id="toggleFullscreenButton" class="btn btn-sm flex items-center gap-1"> 
+                     <svg id="fullscreenIconOpen" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                         <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                     </svg>
+                     <svg id="fullscreenIconClose" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 hidden">
+                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
+                     </svg>
+                     <span id="fullscreenButtonText">Ampliar y leer</span>
+                 </button>
+                 <button id="modeToggle" aria-label="Toggle dark mode">Modo</button>
+                 <button id="logoutButton" class="btn btn-secondary btn-sm w-full sm:w-auto">Cerrar Sesión</button>
+             </div>
         </header>
 
         <div id="readerView" class="flex-grow flex flex-col"> 
@@ -765,29 +773,43 @@
             </main>
         </div>
 
-        <div id="libraryView" class="hidden flex-grow p-4 md:p-6 relative">
+        <div id="libraryView" class="hidden flex-grow relative">
             <button id="exitFullscreenLibraryButton" class="btn btn-secondary btn-sm fixed top-4 right-4 z-50 hidden items-center gap-1">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" /></svg>
                 <span>Salir Pantalla Completa</span>
             </button>
-            <h2 class="text-2xl font-bold mb-6 text-gray-700 dark:text-gray-200">Mi Biblioteca</h2>
-            <div id="collectionFilters" class="flex flex-wrap gap-2 mb-6">
-                <button data-collection="all" class="btn btn-sm btn-secondary">Mostrar Todos</button>
-                <button data-collection="Ciencias" class="btn btn-sm btn-secondary">Ciencias</button>
-                <button data-collection="Sociedad en movimiento" class="btn btn-sm btn-secondary">Sociedad en movimiento</button>
-                <button data-collection="Aulas" class="btn btn-sm btn-secondary">Aulas</button>
+            
+            <div class="p-4 md:p-6">
+                <!-- Sticky Header Controls -->
+                <div id="library-header" class="sticky top-0 z-20 pb-4">
+                    <div class="flex flex-wrap items-center justify-between mb-4 gap-4">
+                        <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-200">Mi Biblioteca</h2>
+                        <div class="relative">
+                            <input type="search" id="librarySearchInput" placeholder="Buscar por título o autor..." class="form-input pl-10 w-full max-w-xs">
+                            <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
+                        </div>
+                    </div>
+                    <div id="collectionFilters" class="flex flex-wrap gap-2">
+                        <button data-collection="all" class="btn btn-sm btn-secondary">Mostrar Todos</button>
+                        <button data-collection="Ciencias" class="btn btn-sm btn-secondary">Ciencias</button>
+                        <button data-collection="Sociedad en movimiento" class="btn btn-sm btn-secondary">Sociedad en movimiento</button>
+                        <button data-collection="Aulas" class="btn btn-sm btn-secondary">Aulas</button>
+                    </div>
+                    <div id="libraryMessage" class="message-base mt-4"></div>
+                </div>
+            
+                <!-- Grid Content -->
+                <div id="libraryGrid" class="library-grid pt-4">
+                    <!-- Los libros de la biblioteca remota se insertarán aquí -->
+                </div>
+                <p id="emptyLibraryMessage" class="text-center text-gray-500 dark:text-gray-400 mt-8 hidden">
+                    Tu biblioteca está vacía o no se pudo cargar.
+                </p>
             </div>
-            <div id="libraryMessage" class="message-base mb-4"></div>
-            <div id="libraryGrid" class="library-grid">
-                <!-- Los libros de la biblioteca remota se insertarán aquí -->
-            </div>
-            <p id="emptyLibraryMessage" class="text-center text-gray-500 dark:text-gray-400 mt-8 hidden">
-                Tu biblioteca está vacía o no se pudo cargar.
-            </p>
-        </div>
-    </div> 
+        </div> 
+    </div>
     <footer id="appFooter" class="mt-auto text-center text-sm py-4">
-        <p>&copy; <span id="year"></span>EdUNLu Lector EPUB. Libre y gratuito.</p>
+        <p>&copy; <span id="year"></span> Lector EPUB Mejorado. Todos los derechos reservados.</p>
     </footer>
 
     <script type="module">
@@ -857,7 +879,9 @@
         const closeFootnoteModalButton = document.getElementById('closeFootnoteModal');
 
         const collectionFiltersContainer = document.getElementById('collectionFilters');
+        const librarySearchInput = document.getElementById('librarySearchInput');
         let currentCollectionFilter = 'all'; 
+        let currentSearchTerm = '';
 
         let book = null;
         let rendition = null;
@@ -866,25 +890,62 @@
         let remoteLibraryBooks = [];
 
         const REMOTE_LIBRARY_CONFIG = {
-            baseUrl: "https://leandrobarriospintos-90.github.io/EdUNLuLectorEpub-1/", 
-            indexFile: "datos/lista.json" 
+            baseUrl: "https://leandrobarriospintos-90.github.io/catalogo-online/", 
+            indexFile: "datos/epubs_edunlu.json" 
         };
 
         const APP_LOGO_CONFIG = {
-            light: "https://leandrobarriospintos-90.github.io/EdUNLuLectorEpub-1/logos/light-edunlu-svg.svg", 
-            dark: "https://leandrobarriospintos-90.github.io/EdUNLuLectorEpub-1/logos/dark-edunlu-svg.svg",   
-            sepia: "https://leandrobarriospintos-90.github.io/EdUNLuLectorEpub-1/logos/sepia-edunlu-svg.svg"  
+            light: "https://leandrobarriospintos-90.github.io/catalogo-online/logos/light-edunlu-svg.svg", 
+            dark: "https://leandrobarriospintos-90.github.io/catalogo-online/logos/dark-edunlu-svg.svg",   
+            sepia: "https://leandrobarriospintos-90.github.io/catalogo-online/logos/sepia-edunlu-svg.svg"  // Added a placeholder for sepia mode
         };
 
         const MOCK_LIBRARY_INDEX = [
-          {
-            "id": "esas-cosas-id",
-            "title": "Esas cosas que se saben",
-            "author": "Marcos Tabossi",
-            "collection": "Sociedad en movimiento", 
-            "epubUrl": "epub/esas_cosas_edunlu.epub",
-            "coverImageUrl": "covers/esas_cosas.gif"
-          },
+            {
+              "id": "origen-de-las-especies", "title": "El Origen de las Especies", "author": "Charles Darwin", "collection": "Ciencias", "epubUrl": "https://www.gutenberg.org/files/100/100-h/100-h.epub", "coverImageUrl": "https://placehold.co/200x280/E53935/ffffff?text=Ciencia+1"  
+            },
+            {
+              "id": "breve-historia-del-tiempo", "title": "Breve historia del tiempo", "author": "Stephen Hawking", "collection": "Ciencias", "epubUrl": "https://www.gutenberg.org/files/100/100-h/100-h.epub", "coverImageUrl": "https://placehold.co/200x280/E53935/ffffff?text=Ciencia+2"  
+            },
+            {
+              "id": "cosmos", "title": "Cosmos", "author": "Carl Sagan", "collection": "Ciencias", "epubUrl": "https://www.gutenberg.org/files/100/100-h/100-h.epub", "coverImageUrl": "https://placehold.co/200x280/E53935/ffffff?text=Ciencia+3"  
+            },
+            {
+              "id": "el-gen-egoista", "title": "El gen egoísta", "author": "Richard Dawkins", "collection": "Ciencias", "epubUrl": "https://www.gutenberg.org/files/100/100-h/100-h.epub", "coverImageUrl": "https://placehold.co/200x280/E53935/ffffff?text=Ciencia+4"  
+            },
+            {
+              "id": "una-breve-historia-de-casi-todo", "title": "Una breve historia de casi todo", "author": "Bill Bryson", "collection": "Ciencias", "epubUrl": "https://www.gutenberg.org/files/100/100-h/100-h.epub", "coverImageUrl": "https://placehold.co/200x280/E53935/ffffff?text=Ciencia+5"  
+            },
+            {
+              "id": "vigilar-y-castigar", "title": "Vigilar y Castigar", "author": "Michel Foucault", "collection": "Sociedad en movimiento", "epubUrl": "https://www.gutenberg.org/files/100/100-h/100-h.epub", "coverImageUrl": "https://placehold.co/200x280/FDD835/000000?text=Sociedad+1"
+            },
+            {
+              "id": "21-lecciones", "title": "21 lecciones para el siglo XXI", "author": "Yuval Noah Harari", "collection": "Sociedad en movimiento", "epubUrl": "https://www.gutenberg.org/files/100/100-h/100-h.epub", "coverImageUrl": "https://placehold.co/200x280/FDD835/000000?text=Sociedad+2"
+            },
+            {
+              "id": "sapiens", "title": "Sapiens: De animales a dioses", "author": "Yuval Noah Harari", "collection": "Sociedad en movimiento", "epubUrl": "https://www.gutenberg.org/files/100/100-h/100-h.epub", "coverImageUrl": "https://placehold.co/200x280/FDD835/000000?text=Sociedad+3"
+            },
+            {
+              "id": "sociedad-espectaculo", "title": "La sociedad del espectáculo", "author": "Guy Debord", "collection": "Sociedad en movimiento", "epubUrl": "https://www.gutenberg.org/files/100/100-h/100-h.epub", "coverImageUrl": "https://placehold.co/200x280/FDD835/000000?text=Sociedad+4"
+            },
+            {
+              "id": "modernidad-liquida", "title": "Modernidad líquida", "author": "Zygmunt Bauman", "collection": "Sociedad en movimiento", "epubUrl": "https://www.gutenberg.org/files/100/100-h/100-h.epub", "coverImageUrl": "https://placehold.co/200x280/FDD835/000000?text=Sociedad+5"
+            },
+            {
+              "id": "pedagogia-del-oprimido", "title": "Pedagogía del Oprimido", "author": "Paulo Freire", "collection": "Aulas", "epubUrl": "https://www.gutenberg.org/files/100/100-h/100-h.epub", "coverImageUrl": "https://placehold.co/200x280/1976D2/ffffff?text=Aulas+1"
+            },
+            {
+              "id": "revoluciones-cientificas", "title": "La estructura de las revoluciones científicas", "author": "Thomas S. Kuhn", "collection": "Aulas", "epubUrl": "https://www.gutenberg.org/files/100/100-h/100-h.epub", "coverImageUrl": "https://placehold.co/200x280/1976D2/ffffff?text=Aulas+2"
+            },
+            {
+              "id": "condicion-humana", "title": "La condición humana", "author": "Hannah Arendt", "collection": "Aulas", "epubUrl": "https://www.gutenberg.org/files/100/100-h/100-h.epub", "coverImageUrl": "https://placehold.co/200x280/1976D2/ffffff?text=Aulas+3"
+            },
+            {
+              "id": "arte-de-amar", "title": "El arte de amar", "author": "Erich Fromm", "collection": "Aulas", "epubUrl": "https://www.gutenberg.org/files/100/100-h/100-h.epub", "coverImageUrl": "https://placehold.co/200x280/1976D2/ffffff?text=Aulas+4"
+            },
+            {
+              "id": "sobre-la-libertad", "title": "Sobre la libertad", "author": "John Stuart Mill", "collection": "Aulas", "epubUrl": "https://www.gutenberg.org/files/100/100-h/100-h.epub", "coverImageUrl": "https://placehold.co/200x280/1976D2/ffffff?text=Aulas+5"
+            }
         ];
 
 
@@ -898,10 +959,11 @@
         };
         let userPreferences = { ...defaultUserPreferences }; 
 
-        const LS_USERS_KEY = 'epubReaderLocalUsers_v2'; 
-        const LS_LOGGED_IN_USER_KEY = 'epubReaderLoggedInUserEmail_v2'; 
-        const LS_USER_PREFS_PREFIX = 'epubReaderUserPrefs_v2_'; 
-        const LS_USER_BOOK_DATA_PREFIX = 'epubReaderBookData_v2_';
+        // UPDATED: Version up to avoid conflicts with old user data structure
+        const LS_USERS_KEY = 'epubReaderLocalUsers_v3'; 
+        const LS_LOGGED_IN_USER_KEY = 'epubReaderLoggedInUser_v3'; 
+        const LS_USER_PREFS_PREFIX = 'epubReaderUserPrefs_v3_'; 
+        const LS_USER_BOOK_DATA_PREFIX = 'epubReaderBookData_v3_';
 
 
         function openModal(modalElement) { if (modalElement) modalElement.style.display = 'flex'; }
@@ -912,7 +974,7 @@
             element.className = `message-base ${isSuccess ? 'success-message' : 'error-message'}`;
             element.style.display = 'block';
             if (autoHide) { 
-                 setTimeout(() => hideMessage(element), isSuccess ? 3000 : 5000);
+                setTimeout(() => hideMessage(element), isSuccess ? 3000 : 5000);
             }
         }
         function hideMessage(element) {
@@ -955,35 +1017,37 @@
         function saveLocalUsers(users) {
             localStorage.setItem(LS_USERS_KEY, JSON.stringify(users));
         }
-        function getLoggedInUserEmail() {
+        // UPDATED: handles username now
+        function getLoggedInUser() {
             return localStorage.getItem(LS_LOGGED_IN_USER_KEY);
         }
-        function setLoggedInUserEmail(email) {
-            if (email) {
-                localStorage.setItem(LS_LOGGED_IN_USER_KEY, email);
+        // UPDATED: handles username now
+        function setLoggedInUser(username) {
+            if (username) {
+                localStorage.setItem(LS_LOGGED_IN_USER_KEY, username);
             } else {
                 localStorage.removeItem(LS_LOGGED_IN_USER_KEY);
             }
         }
         function saveUserPreferences() {
-            const loggedInEmail = getLoggedInUserEmail();
-            if (!loggedInEmail) return;
+            const loggedInUser = getLoggedInUser();
+            if (!loggedInUser) return;
             try {
-                localStorage.setItem(LS_USER_PREFS_PREFIX + loggedInEmail, JSON.stringify(userPreferences));
+                localStorage.setItem(LS_USER_PREFS_PREFIX + loggedInUser, JSON.stringify(userPreferences));
             } catch (e) {
                 console.error("Error saving preferences to localStorage:", e);
-                 if (e.name === 'QuotaExceededError') {
+                if (e.name === 'QuotaExceededError') {
                     displayMessage(libraryMessage, 'Error: No hay suficiente espacio para guardar preferencias.', false, false);
                 }
             }
         }
         function loadUserPreferences() {
-            const loggedInEmail = getLoggedInUserEmail();
-            if (!loggedInEmail) {
+            const loggedInUser = getLoggedInUser();
+            if (!loggedInUser) {
                 userPreferences = { ...defaultUserPreferences }; 
                 return;
             }
-            const prefsJson = localStorage.getItem(LS_USER_PREFS_PREFIX + loggedInEmail);
+            const prefsJson = localStorage.getItem(LS_USER_PREFS_PREFIX + loggedInUser);
             if (prefsJson) {
                 try {
                     const loadedPrefs = JSON.parse(prefsJson);
@@ -998,9 +1062,9 @@
         }
         
         function getBookDataKey(bookId) {
-            const loggedInEmail = getLoggedInUserEmail();
-            if (!loggedInEmail || !bookId) return null;
-            return LS_USER_BOOK_DATA_PREFIX + loggedInEmail + '_' + bookId;
+            const loggedInUser = getLoggedInUser();
+            if (!loggedInUser || !bookId) return null;
+            return LS_USER_BOOK_DATA_PREFIX + loggedInUser + '_' + bookId;
         }
 
         function loadBookUserData(bookId) {
@@ -1029,7 +1093,7 @@
                 localStorage.setItem(key, JSON.stringify(newData));
             } catch (e) {
                 console.error(`Error saving book data for ${bookId}:`, e);
-                 if (e.name === 'QuotaExceededError') {
+                if (e.name === 'QuotaExceededError') {
                     displayMessage(libraryMessage, 'Error: Límite de almacenamiento alcanzado. No se pudo guardar el progreso del libro.', false, false);
                 }
             }
@@ -1042,7 +1106,7 @@
                 saveBookUserData(bookId, { bookmarks: bookData.bookmarks });
                 renderBookmarksForCurrentBook(); 
             } else {
-                 displayMessage(libraryMessage, "Este marcador ya existe.", false, true);
+                displayMessage(libraryMessage, "Este marcador ya existe.", false, true);
             }
         }
 
@@ -1091,7 +1155,7 @@
                     deleteBtn.addEventListener('click', (e) => {
                         e.stopPropagation(); 
                         showCustomConfirm(`¿Eliminar el marcador "${bookmark.label}"?`, () => {
-                             removeBookBookmark(currentBookIdentifier, bookmark.cfi);
+                            removeBookBookmark(currentBookIdentifier, bookmark.cfi);
                         });
                     });
                     li.appendChild(textSpan);
@@ -1109,6 +1173,7 @@
             const isLibraryVisible = !libraryView.classList.contains('hidden');
             
             if (toggleFullscreenButton) {
+                toggleFullscreenButton.style.display = isLibraryVisible ? 'none' : 'flex';
                 fullscreenButtonText.textContent = isFullscreen ? 'Reducir y salir' : 'Ampliar y leer'; 
                 fullscreenIconOpen.classList.toggle('hidden', isFullscreen);
                 fullscreenIconClose.classList.toggle('hidden', !isFullscreen);
@@ -1145,33 +1210,48 @@
         function renderRemoteLibraryView(booksToRender) {
             libraryGrid.innerHTML = ''; 
             hideMessage(libraryMessage);
-
-            const filteredBooks = booksToRender.filter(book => {
+            
+            // First filter by collection
+            let collectionFilteredBooks = booksToRender.filter(book => {
                 if (currentCollectionFilter === 'all') {
                     return true;
                 }
                 return book.collection === currentCollectionFilter;
             });
 
-
-            if (!filteredBooks || filteredBooks.length === 0) {
-                emptyLibraryMessage.classList.remove('hidden');
-                emptyLibraryMessage.textContent = currentCollectionFilter === 'all' 
-                    ? "Tu biblioteca está vacía o no se pudo cargar."
-                    : `No hay libros en la colección "${currentCollectionFilter}".`;
-            } else {
-                 emptyLibraryMessage.classList.add('hidden');
+            // Then filter by search term
+            const searchTerm = currentSearchTerm.toLowerCase().trim();
+            let finalFilteredBooks = collectionFilteredBooks;
+            if (searchTerm) {
+                finalFilteredBooks = collectionFilteredBooks.filter(book => 
+                    (book.title && book.title.toLowerCase().includes(searchTerm)) || 
+                    (book.author && book.author.toLowerCase().includes(searchTerm))
+                );
             }
 
-            filteredBooks.sort((a,b) => (a.title || "").localeCompare(b.title || "")); 
 
-            filteredBooks.forEach(bookItem => {
+            if (!finalFilteredBooks || finalFilteredBooks.length === 0) {
+                emptyLibraryMessage.classList.remove('hidden');
+                if (searchTerm) {
+                    emptyLibraryMessage.textContent = `No se encontraron resultados para "${currentSearchTerm}" en esta colección.`;
+                } else {
+                    emptyLibraryMessage.textContent = currentCollectionFilter === 'all' 
+                    ? "Tu biblioteca está vacía o no se pudo cargar."
+                    : `No hay libros en la colección "${currentCollectionFilter}".`;
+                }
+            } else {
+                emptyLibraryMessage.classList.add('hidden');
+            }
+
+            finalFilteredBooks.sort((a,b) => (a.title || "").localeCompare(b.title || "")); 
+
+            finalFilteredBooks.forEach(bookItem => {
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'library-item';
                 
                 const coverImg = document.createElement('img');
                 coverImg.className = 'library-item-cover';
-                coverImg.src = bookItem.coverImageUrl ? (new URL(bookItem.coverImageUrl, REMOTE_LIBRARY_CONFIG.baseUrl).href) : 'https://placehold.co/200x280/e0e0e0/777777?text=Sin+Portada'; 
+                coverImg.src = bookItem.coverImageUrl ? (bookItem.coverImageUrl.startsWith('http') ? bookItem.coverImageUrl : new URL(bookItem.coverImageUrl, REMOTE_LIBRARY_CONFIG.baseUrl).href) : 'https://placehold.co/200x280/e0e0e0/777777?text=Sin+Portada'; 
                 coverImg.alt = `Portada de ${bookItem.title}`;
                 coverImg.onerror = function() { this.src = 'https://placehold.co/200x280/e0e0e0/777777?text=Error'; };
                 itemDiv.appendChild(coverImg);
@@ -1227,20 +1307,16 @@
         async function fetchAndRenderRemoteLibrary() {
             displayMessage(libraryMessage, "Cargando biblioteca...", true, false);
             try {
-                // --- Production code: Fetch from remote server ---
-                // const response = await fetch(new URL(REMOTE_LIBRARY_CONFIG.indexFile, REMOTE_LIBRARY_CONFIG.baseUrl).href);
-                // if (!response.ok) {
-                //     throw new Error(`HTTP error! status: ${response.status}`);
-                // }
-                // remoteLibraryBooks = await response.json();
-                // -------------------------------------------------
-                
-                // --- Development/Mock code: Simulate fetch and use mock data ---
-                console.log(`Simulating fetch from: ${new URL(REMOTE_LIBRARY_CONFIG.indexFile, REMOTE_LIBRARY_CONFIG.baseUrl).href}`);
-                await new Promise(resolve => setTimeout(resolve, 500)); 
-                remoteLibraryBooks = MOCK_LIBRARY_INDEX; 
-                // -------------------------------------------------------------
+                // Construct URL with cache-busting parameter
+                const cacheBusterUrl = new URL(REMOTE_LIBRARY_CONFIG.indexFile, REMOTE_LIBRARY_CONFIG.baseUrl);
+                cacheBusterUrl.searchParams.set('v', new Date().getTime()); // Append timestamp as a version
 
+                const response = await fetch(cacheBusterUrl.href);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                remoteLibraryBooks = await response.json();
+                
                 hideMessage(libraryMessage);
                 renderRemoteLibraryView(remoteLibraryBooks);
 
@@ -1275,7 +1351,7 @@
                 return;
             }
             currentBookIdentifier = bookFromRemoteIndex.id;
-            const fullEpubUrl = new URL(bookFromRemoteIndex.epubUrl, REMOTE_LIBRARY_CONFIG.baseUrl).href;
+            const fullEpubUrl = bookFromRemoteIndex.epubUrl.startsWith('http') ? bookFromRemoteIndex.epubUrl : new URL(bookFromRemoteIndex.epubUrl, REMOTE_LIBRARY_CONFIG.baseUrl).href;
             const bookUserData = loadBookUserData(currentBookIdentifier);
             
             setupRendition(fullEpubUrl, bookUserData.lastCfi); 
@@ -1284,13 +1360,13 @@
 
         async function checkLoginStatus() { 
             if(appLoadingSpinner) appLoadingSpinner.style.display = 'block';
-            const loggedInEmail = getLoggedInUserEmail();
+            const loggedInUser = getLoggedInUser();
 
-            if (loggedInEmail) {
+            if (loggedInUser) {
                 const users = getLocalUsers();
-                const currentUser = users.find(u => u.email === loggedInEmail);
+                const currentUser = users.find(u => u.username === loggedInUser);
                 if (currentUser) {
-                    welcomeMessage.textContent = `Bienvenido, ${currentUser.username || currentUser.email}!`;
+                    welcomeMessage.textContent = `Bienvenido, ${currentUser.username}!`;
                     loadUserPreferences();
                     applyCurrentMode(false); 
                     updateFontControlButtonsState(); 
@@ -1300,7 +1376,7 @@
                         rendition.themes.select(userPreferences.mode);
                         applyReaderCustomizations(false); 
                     } else {
-                         applyCurrentMode(false);
+                        applyCurrentMode(false);
                     }
                     
                     readerAppContainer.classList.remove('hidden'); 
@@ -1308,7 +1384,7 @@
                     
                     closeModal(loginModal); closeModal(registerModal);
                 } else {
-                    setLoggedInUserEmail(null); 
+                    setLoggedInUser(null); 
                     showLoginScreen();
                 }
             } else {
@@ -1353,13 +1429,12 @@
         registerForm.addEventListener('submit', (event) => {
             event.preventDefault();
             const username = event.target.registerUsername.value.trim();
-            const email = event.target.registerEmail.value.trim();
             const password = event.target.registerPassword.value;
             const confirmPassword = event.target.confirmPassword.value;
 
             hideMessage(registerErrorMessage); hideMessage(registerSuccessMessage);
-            if (!email || !password || !confirmPassword) {
-                displayMessage(registerErrorMessage, 'Email y contraseña son obligatorios.'); return;
+            if (!username || !password || !confirmPassword) {
+                displayMessage(registerErrorMessage, 'Todos los campos son obligatorios.'); return;
             }
             if (password.length < 6) {
                 displayMessage(registerErrorMessage, 'La contraseña debe tener al menos 6 caracteres.'); return;
@@ -1369,10 +1444,10 @@
             }
 
             const users = getLocalUsers();
-            if (users.find(user => user.email === email)) {
-                displayMessage(registerErrorMessage, 'Este correo electrónico ya está en uso.'); return;
+            if (users.find(user => user.username === username)) {
+                displayMessage(registerErrorMessage, 'Este nombre de usuario ya está en uso.'); return;
             }
-            users.push({ username: username || email, email, password }); 
+            users.push({ username, password }); 
             saveLocalUsers(users);
             displayMessage(registerSuccessMessage, '¡Registro exitoso! Ahora puedes iniciar sesión.', true);
             registerForm.reset();
@@ -1384,26 +1459,26 @@
 
         loginForm.addEventListener('submit', (event) => {
             event.preventDefault();
-            const email = event.target.email.value; 
+            const username = event.target.username.value; 
             const password = event.target.password.value;
             hideMessage(loginErrorMessage);
 
-            if (!email || !password) { 
-                displayMessage(loginErrorMessage, 'Email y contraseña son obligatorios.'); return; 
+            if (!username || !password) { 
+                displayMessage(loginErrorMessage, 'Nombre de usuario y contraseña son obligatorios.'); return; 
             }
             const users = getLocalUsers();
-            const foundUser = users.find(user => user.email === email && user.password === password);
+            const foundUser = users.find(user => user.username === username && user.password === password);
 
             if (foundUser) {
-                setLoggedInUserEmail(email);
+                setLoggedInUser(username);
                 checkLoginStatus(); 
             } else {
-                displayMessage(loginErrorMessage, 'Email o contraseña incorrectos.');
+                displayMessage(loginErrorMessage, 'Nombre de usuario o contraseña incorrectos.');
             }
         });
 
         logoutButton.addEventListener('click', () => {
-            setLoggedInUserEmail(null);
+            setLoggedInUser(null);
             checkLoginStatus(); 
         });
 
@@ -1528,8 +1603,8 @@
                     userPreferences.lastBookIdentifier = currentBookIdentifier;
                     const currentLoc = rendition.currentLocation();
                     if (currentLoc && currentLoc.start){
-                         saveBookUserData(currentBookIdentifier, { lastCfi: currentLoc.start.cfi });
-                         userPreferences.lastCfi = currentLoc.start.cfi;
+                        saveBookUserData(currentBookIdentifier, { lastCfi: currentLoc.start.cfi });
+                        userPreferences.lastCfi = currentLoc.start.cfi;
                     }
                     saveUserPreferences(); 
                 }
@@ -1538,7 +1613,7 @@
             }).catch(err => { 
                 console.error("Error displaying rendition:", err);
                 viewerLoadingSpinner.style.display = 'none';
-                viewerPlaceholder.textContent = "Error al cargar el libro desde la URL.";
+                viewerPlaceholder.textContent = "Error al cargar el libro. Verifique la URL y la configuración de CORS.";
                 viewerPlaceholder.style.display = 'block';
                 enableReaderControls(false);
                 currentBookIdentifier = null; 
@@ -1550,11 +1625,11 @@
                 let percentage = 0; 
                 try {
                     if (book && book.locations && book.locations.length() > 0) { 
-                         percentage = book.locations.percentageFromCfi(currentCfi);
+                        percentage = book.locations.percentageFromCfi(currentCfi);
                         const page = book.locations.locationFromCfi(currentCfi);
                         locationDisplay.textContent = `Página: ${page !== undefined && page !== null ? page : '?'} (${Math.round(percentage * 100)}%)`;
                     } else {
-                         locationDisplay.textContent = `Ubicación: ${currentCfi.substring(8,30)}...`;
+                        locationDisplay.textContent = `Ubicación: ${currentCfi.substring(8,30)}...`;
                     }
                 } catch (e) { 
                     locationDisplay.textContent = `Ubicación: ${currentCfi.substring(8,30)}...`;
@@ -1592,7 +1667,7 @@
                     locationDisplay.textContent = `Página: ${page !== undefined && page !== null ? page : '?'} (${Math.round(percentage * 100)}%)`;
                     updateActiveTocItem(currentLocation);
                     if (currentBookIdentifier) { 
-                         saveBookUserData(currentBookIdentifier, { 
+                        saveBookUserData(currentBookIdentifier, { 
                             lastCfi: cfi, 
                             lastPercentage: Math.round(percentage * 100) 
                         });
@@ -1675,12 +1750,12 @@
             } else if (userPreferences.mode === 'sepia') {
                 document.body.classList.add('sepia-mode');
                 modeToggle.textContent = 'Modo Claro';
-                 if (currentLogoImg && APP_LOGO_CONFIG.sepia) currentLogoImg.src = APP_LOGO_CONFIG.sepia;
-                 else if (currentLogoImg) currentLogoImg.style.display = 'none';
+                if (currentLogoImg && APP_LOGO_CONFIG.sepia) currentLogoImg.src = APP_LOGO_CONFIG.sepia;
+                else if (currentLogoImg) currentLogoImg.style.display = 'none';
             } else { 
                 modeToggle.textContent = 'Modo Oscuro';
-                 if (currentLogoImg && APP_LOGO_CONFIG.light) currentLogoImg.src = APP_LOGO_CONFIG.light;
-                 else if (currentLogoImg) currentLogoImg.style.display = 'none';
+                if (currentLogoImg && APP_LOGO_CONFIG.light) currentLogoImg.src = APP_LOGO_CONFIG.light;
+                else if (currentLogoImg) currentLogoImg.style.display = 'none';
             }
              if (currentLogoImg && currentLogoImg.src) currentLogoImg.style.display = 'inline-block';
 
@@ -1749,8 +1824,8 @@
             if (!document.body.classList.contains('epub-fullscreen')) {
                 tocNavigator.classList.remove('toc-fullscreen-open');
             } else {
-                 tocNavigator.classList.remove('open'); 
-                 tocOverlay.classList.remove('open');
+                tocNavigator.classList.remove('open'); 
+                tocOverlay.classList.remove('open');
             }
             triggerRenditionResize(350);
         }
@@ -1788,6 +1863,11 @@
                     renderRemoteLibraryView(remoteLibraryBooks);
                 }
             }
+        });
+
+        librarySearchInput.addEventListener('input', (event) => {
+            currentSearchTerm = event.target.value;
+            renderRemoteLibraryView(remoteLibraryBooks);
         });
 
 
@@ -1894,7 +1974,7 @@
                 const backlinks = clonedFootnoteContent.querySelectorAll('a[href^="#"], a[rev="footnote"], a[rel="footnote"]');
                 backlinks.forEach(link => {
                     const linkHref = link.getAttribute('href');
-                     if (linkHref && (linkHref.includes('epub-footnote-') || linkHref.includes('fnref') || linkHref.includes('noteref_') || linkHref === `#${targetId}` || (link.closest('sup') && /^\s*(\d+|[⁎†‡§¶])\s*$/.test(link.textContent.trim())) )) {
+                    if (linkHref && (linkHref.includes('epub-footnote-') || linkHref.includes('fnref') || linkHref.includes('noteref_') || linkHref === `#${targetId}` || (link.closest('sup') && /^\s*(\d+|[⁎†‡§¶])\s*$/.test(link.textContent.trim())) )) {
                         link.remove();
                     }
                 });
